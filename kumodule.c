@@ -46,7 +46,7 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
                "http://www.abclinuxu.cz/blog/Tuxuv_anal/2008/7/linuxove-ctyrversi/diskuse#36"),
     fortuna_sg("Tss, z MŠ mě pustili vo rok dřív, jak sem byl chytrej :P Už jsem uměl napsat PIVO i se zavázanýma očima.",
                "Darm",
-               "http://www.abclinuxu.cz/blog/Saljack/2010/4/mala-pomoc-s-javou"),
+               "http://www.abclinuxu.cz/blog/Saljack/2010/4/mala-pomoc-s-javou#43"),
     fortuna_sg("[Reakce na kalhotky C-String] Je to výbornej nápad, vohnul sem si naběračku na polívku, sklapnul půlky a teď tady v tom běhám po bytě... ",
                "Amigapower",
                "http://www.abclinuxu.cz/blog/puppylinux/2010/9/cstring#1"),
@@ -97,7 +97,6 @@ static ssize_t ku_read(struct file * file, char * buf, size_t count,
   if (*ppos < 0) return 0;
 
   get_random_bytes(&rand, sizeof(rand));  // get random number and modulo it
-  //rand = 3;
   if (!ku_fortunes_nums[fortune_number]) return 0;
   rand %= ku_fortunes_nums[fortune_number];
 
@@ -115,7 +114,6 @@ static ssize_t ku_read(struct file * file, char * buf, size_t count,
   for(buf_pos = str_pos = last_cpy = 0; str_pos < len; str_pos++)
   {
     num = str_pos-last_cpy+1;
-    //buffer[buf_pos++] = (*fortune)[str_pos];
     if ((*fortune)[str_pos] == '\n')
     {
       //kopirovat od last_cpy po soucasny
@@ -228,5 +226,5 @@ module_exit(ku_exit);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("kralyk");
-MODULE_DESCRIPTION("KERNEL ULTRAS module");
+MODULE_DESCRIPTION("KERNEL ULTRAS kernel module");
 MODULE_VERSION("prvni");
