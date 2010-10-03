@@ -96,8 +96,13 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
     fortuna_sg("Wokna mnohým lidem vyhovujou víc. Ovšem ne proto, že by byly lepší, ale proto, že tito uživatelé jsou horší a platí svůj k svému ;)",
                "Ash",
                "http://www.abclinuxu.cz/ankety/microsoft-codeplex/diskuse#33"),
-       fortuna("Jardík: Mně to přijde trhaný\nvlastikroot: Laguje ti mozek",
+       fortuna("Jardík: Mně to přijde trhaný\n"
+               "vlastikroot: Laguje ti mozek",
                "http://www.abclinuxu.cz/blog/Standovo/2009/10/windows-7-prvni-zklamani/diskuse#146"),
+       fortuna("AltOS: Bah! Az budou dlouhe zimni vecery, tak bych snad uz opravdu mohl \"vytvorit\" tu novou distribuci Gambrinux...\n"
+               "Marek Stopka: Chtěl si říct Gambribuntu, ne?\n"
+               "AltOS: Ne, chtel jsem rici openGAMBRINUSE.",
+               "http://www.abclinuxu.cz/blog/puppylinux/2008/9/gnu-linux-vs-pivo#10"),
     fortuna_sg("Svoboda zůstává obrovskou překážkou pro růst moci.",
                "kralyk",
                "http://www.abclinuxu.cz/blog/yet_another_blog/2010/1/hudebni-prumysl-nas-bavi/diskuse#2"),
@@ -107,6 +112,12 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
     fortuna_sg("S platností do konce roku budu vzorným křesťanem, nebudu číst Dawkinse, vzývat Cthulhu a přestanu zabíjet koťatka.",
                "kyknos",
                "http://www.abclinuxu.cz/blog/quid_novi/2009/12/prechazim-na-krestanstvi"),
+    fortuna_sg("Nemůžete publikovat v minulosti!",
+               "abclinuxu.cz",
+               "http://www.abclinuxu.cz/blog/Untitled/2010/10/kernel-modul-kernel-ultras/diskuse#57"),
+    fortuna_sg("Já myslel že seznamka už tady dávno je - vždyť je tady všude odkaz \"Sbalit\" :-O",
+               "podlesh",
+               "http://www.abclinuxu.cz/blog/ze_zivota/2005/11/abcseznamka-ze-by-feature-request-.o#35"),
     NULL
   },
   /*** /dev/finger ***/
