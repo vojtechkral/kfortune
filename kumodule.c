@@ -44,13 +44,14 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
 {
   /*** /dev/ka ***/
   {
+    //KU
     fortuna_sg("Jsem kernel panic, neni to lehky nesel bych za nic do naky /dev/ky...",
-               "Kevin (anonym)",
+               "Kevin",
                "http://www.abclinuxu.cz/blog/Tuxuv_anal/2008/7/linuxove-ctyrversi/diskuse#36"),
     fortuna_sg("Tss, z MŠ mě pustili vo rok dřív, jak sem byl chytrej :P Už jsem uměl napsat PIVO i se zavázanýma očima.",
                "Darm",
                "http://www.abclinuxu.cz/blog/Saljack/2010/4/mala-pomoc-s-javou#43"),
-    fortuna_sg("[Reakce na kalhotky C-String] Je to výbornej nápad, vohnul sem si naběračku na polívku, sklapnul půlky a teď tady v tom běhám po bytě... ",
+    fortuna_sg("[Reakce na kalhotky C-String]\nJe to výbornej nápad, vohnul sem si naběračku na polívku, sklapnul půlky a teď tady v tom běhám po bytě... ",
                "Amigapower",
                "http://www.abclinuxu.cz/blog/puppylinux/2010/9/cstring#1"),
     fortuna_sg("Tím šťastlivcem se stal soutěžící kotyz, který s odpovědí přispěchal jen několik minut po vyhlášení soutěže a dostane tedy téměř dvoumetrové plátno s leteckým snímkem centra Sydney s rozlišením 8 541 x 4 357 pixelů.",
@@ -62,7 +63,8 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
     fortuna_sg("...konzole pyčo, na tom se věšej záclony... :-D",
                "Amigapower",
                "http://www.abclinuxu.cz/blog/TryCatch/2010/2/jak-jsem-hledal-vyhovujici-terminal-pro-windows#55"),
-    fortuna_sg("Ty asi budeš retartovaný jako většina místní verbeže",
+    //Tomeš
+    fortuna_sg("Ty asi budeš retartovaný jako většina místní verbeže.",
                "Petr Tomeš",
                "http://www.abclinuxu.cz/blog/ptomes/2008/3/firefox-3-je-nejrychlejsi-ve-zpracovani-javascriptu/diskuse#215"),
     fortuna_sg("Mozilla dělá program pro 300 milionů lidí, díky kterýmu pokračují inovace na webu a vyvíjí se i dominantní prohlížeč.",
@@ -74,6 +76,7 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
     fortuna_sg("Proč lžeš?",
                "Petr Tomeš",
                "http://www.abclinuxu.cz/clanky/firefox-4-mame-se-na-co-tesit#83"),
+    //Jardík
     fortuna_sg("Další 32bit šmejďárna...",
                "Jardík",
                "http://www.abclinuxu.cz/clanky/recenze/adobe-air-flash-a-ajax-na-desktopu#1"),
@@ -83,6 +86,27 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
     fortuna_sg("Logo ubuntu vytejká z panelu.",
                "Jardík",
                "http://www.abclinuxu.cz/desktopy/xkucf03-20100516#1"),
+    //etc
+    fortuna_sg("Akorát si v jednom videu na YuTube někdo stěžoval, že mu při používání tohoto mikrofonu nestojí ve vzpřímené poloze (mikrofon).",
+               "jirkaqwe",
+               "http://www.abclinuxu.cz/poradna/hardware/show/315548#8"),
+    fortuna_sg("A vida, echo z žumpy.",
+               "podlesh",
+               "http://www.abclinuxu.cz/blog/doli/2009/5/miting-cssd-na-andelu#584"),
+    fortuna_sg("Wokna mnohým lidem vyhovujou víc. Ovšem ne proto, že by byly lepší, ale proto, že tito uživatelé jsou horší a platí svůj k svému ;)",
+               "Ash",
+               "http://www.abclinuxu.cz/ankety/microsoft-codeplex/diskuse#33"),
+       fortuna("Jardík: Mně to přijde trhaný\nvlastikroot: Laguje ti mozek",
+               "http://www.abclinuxu.cz/blog/Standovo/2009/10/windows-7-prvni-zklamani/diskuse#146"),
+    fortuna_sg("Svoboda zůstává obrovskou překážkou pro růst moci.",
+               "kralyk",
+               "http://www.abclinuxu.cz/blog/yet_another_blog/2010/1/hudebni-prumysl-nas-bavi/diskuse#2"),
+    fortuna_sg("Ba dokonce to není ani smilstvo, což je s podivem, páč smilstvo je dnes snad úplně všecko.",
+               "kralyk",
+               "http://www.abclinuxu.cz/blog/zblepty/2009/7/proc-nebudu-volit-ceskou-piratskou-stranu/diskuse#555"),
+    fortuna_sg("S platností do konce roku budu vzorným křesťanem, nebudu číst Dawkinse, vzývat Cthulhu a přestanu zabíjet koťatka.",
+               "kyknos",
+               "http://www.abclinuxu.cz/blog/quid_novi/2009/12/prechazim-na-krestanstvi"),
     NULL
   },
   /*** /dev/finger ***/
@@ -111,7 +135,7 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
     "Arch je nejlepší linuxová distribuce",
     "Ubuntu je nejlepší linuxová distribuce",
     "Debian je nejlepší linuxová distribuce",
-    "MS Windows jsou již dnes velmi dobře zabezpečené",
+    "MS Windows jsou již dnes velmi dobře zabezpečený systém",
     "Nebojte se, je to absolutně bezpečné",
     NULL
   },
