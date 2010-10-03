@@ -59,6 +59,30 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
     fortuna_sg("Ty mi děláš torčr!",
                "vlastikroot",
                "(MoR)"),
+    fortuna_sg("...konzole pyčo, na tom se věšej záclony... :-D",
+               "Amigapower",
+               "http://www.abclinuxu.cz/blog/TryCatch/2010/2/jak-jsem-hledal-vyhovujici-terminal-pro-windows#55"),
+    fortuna_sg("Ty asi budeš retartovaný jako většina místní verbeže",
+               "Petr Tomeš",
+               "http://www.abclinuxu.cz/blog/ptomes/2008/3/firefox-3-je-nejrychlejsi-ve-zpracovani-javascriptu/diskuse#215"),
+    fortuna_sg("Mozilla dělá program pro 300 milionů lidí, díky kterýmu pokračují inovace na webu a vyvíjí se i dominantní prohlížeč.",
+               "Petr Tomeš",
+               "http://www.abclinuxu.cz/zpravicky/firefox-3.5-rc/diskuse#150"),
+    fortuna_sg("Opera dělá vcelku bezvýznamný produkt vesměs pro pár procent méně náročných úchyláků, kteří se spokojí s omezenými možnostmi Opery a jejími vyššími paměťovými nároky.",
+               "Petr Tomeš",
+               "http://www.abclinuxu.cz/zpravicky/firefox-3.5-rc/diskuse#150"),
+    fortuna_sg("Proč lžeš?",
+               "Petr Tomeš",
+               "http://www.abclinuxu.cz/clanky/firefox-4-mame-se-na-co-tesit#83"),
+    fortuna_sg("Další 32bit šmejďárna...",
+               "Jardík",
+               "http://www.abclinuxu.cz/clanky/recenze/adobe-air-flash-a-ajax-na-desktopu#1"),
+    fortuna_sg("Vidíte taky ty hnusný nekvalitní schodovitý přechody?",
+               "Jardík",
+               "http://www.abclinuxu.cz/desktopy/jardik-20091008"),
+    fortuna_sg("Logo ubuntu vytejká z panelu.",
+               "Jardík",
+               "http://www.abclinuxu.cz/desktopy/xkucf03-20100516#1"),
     NULL
   },
   /*** /dev/finger ***/
@@ -88,6 +112,7 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
     "Ubuntu je nejlepší linuxová distribuce",
     "Debian je nejlepší linuxová distribuce",
     "MS Windows jsou již dnes velmi dobře zabezpečené",
+    "Nebojte se, je to absolutně bezpečné",
     NULL
   },
 };
@@ -104,7 +129,7 @@ static ssize_t ku_read(struct file * file, char * buf, size_t count,
 
   if (*ppos < 0) return 0;
 
-  get_random_bytes(&rand, sizeof(rand));  // get random number and modulo it
+  get_random_bytes(&rand, sizeof(rand));  // Get random number and modulo it
   if (!ku_fortunes_nums[fortune_number]) return 0;
   rand %= ku_fortunes_nums[fortune_number];
 
