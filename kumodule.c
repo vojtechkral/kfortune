@@ -1,5 +1,8 @@
 /*
  * KERNEL ULTRAS kernel module
+ *
+ * Big thanks to Valerie Henson for: / Mnohé díky Valerii Henson za:
+ *   http://linuxdevcenter.com/pub/a/linux/2007/07/05/devhelloworld-a-simple-introduction-to-device-drivers-under-linux.html?page=1
  */
 
 #include <linux/fs.h>
