@@ -59,7 +59,7 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
                "http://www.zive.cz/bleskovky/vysledky-souteze-o-obrovsky-snimek-z-google-earth/sc-4-a-148305/default.aspx"),
     fortuna_sg("Ty mi děláš torčr!",
                "vlastikroot",
-               "(MoR)"),
+               "http://www.abclinuxu.cz/blog/HF/2010/7/reportaz-z-masters-of-rock"),
     fortuna_sg("...konzole pyčo, na tom se věšej záclony... :-D",
                "Amigapower",
                "http://www.abclinuxu.cz/blog/TryCatch/2010/2/jak-jsem-hledal-vyhovujici-terminal-pro-windows#55"),
@@ -118,6 +118,18 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
     fortuna_sg("Já myslel že seznamka už tady dávno je - vždyť je tady všude odkaz \"Sbalit\" :-O",
                "podlesh",
                "http://www.abclinuxu.cz/blog/ze_zivota/2005/11/abcseznamka-ze-by-feature-request-.o#35"),
+    fortuna_sg("Pokud jsi to vyčetl z hvězd, možná by stálo za to vyčistit si dalekohled.",
+               "trekker.dk",
+               "http://www.abclinuxu.cz/blog/engineering/2009/3/nove-blogy-na-linuxsoftu/diskuse#33"),
+    fortuna_sg("Windows jsou jako hamburger. Drahé, zbytečné, ale kupuje ho většina lidí.",
+               "Sten (anonym)",
+               "http://www.abclinuxu.cz/zpravicky/linuxove-distribuce-prirovnany-k-jidlu#19"),
+    fortuna_sg("MacOS X je jako kaviár. Extrémně drahý, chutná divně a lidé, co na něj mají, se jím rádi chlubí.",
+               "Sten (anonym)",
+               "http://www.abclinuxu.cz/zpravicky/linuxove-distribuce-prirovnany-k-jidlu#19"),
+    fortuna_sg("Měříme si s kamarády uptime a pak si je ve škole porovnáváme, kdo ho má delší.",
+               "Jenda",
+               "http://www.abclinuxu.cz/blog/Untitled/2010/10/kernel-modul-kernel-ultras/diskuse#63"),
     NULL
   },
   /*** /dev/finger ***/
@@ -148,6 +160,9 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
     "Debian je nejlepší linuxová distribuce",
     "MS Windows jsou již dnes velmi dobře zabezpečený systém",
     "Nebojte se, je to absolutně bezpečné",
+    "01:56:43 up 327 days, 6:41, 1 user, load average: 0.46, 0.51, 0.57",
+    "14:07:29 up 291 days, 16:21, 1 user, load average: 0.41, 0.52, 0.77",
+    "15:16:59 up 488 days, 6:21, 1 user, load average: 0.40, 0.49, 0.55",
     NULL
   },
 };
