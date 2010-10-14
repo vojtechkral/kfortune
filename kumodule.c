@@ -3,6 +3,7 @@
  *
  * Big thanks to Valerie Henson for: / Mnohé díky Valerii Henson za:
  *   http://linuxdevcenter.com/pub/a/linux/2007/07/05/devhelloworld-a-simple-introduction-to-device-drivers-under-linux.html?page=1
+ *
  */
 
 #include <linux/fs.h>
@@ -63,6 +64,18 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
     fortuna_sg("...konzole pyčo, na tom se věšej záclony... :-D",
                "Amigapower",
                "http://www.abclinuxu.cz/blog/TryCatch/2010/2/jak-jsem-hledal-vyhovujici-terminal-pro-windows#55"),
+    fortuna_sg("Sorry, ale když \"danajský dar\" vypadne z Amigapowera, \"nenormální přeumělkovaná řeč\" asi není na místě.",
+               "Archer",
+               "http://www.abclinuxu.cz/blog/merlins/2010/10/statni-maturita/diskuse#67"),
+    fortuna_sg("Svoboda zůstává obrovskou překážkou pro růst moci.",
+               "kralyk",
+               "http://www.abclinuxu.cz/blog/yet_another_blog/2010/1/hudebni-prumysl-nas-bavi/diskuse#2"),
+       fortuna("Jardík: Mně to přijde trhaný\n"
+               "vlastikroot: Laguje ti mozek",
+               "http://www.abclinuxu.cz/blog/Standovo/2009/10/windows-7-prvni-zklamani/diskuse#146"),
+    fortuna_sg("Politika a zločin k sobě neodlučitelně patří ... asi jako zubaři a The Coca-Cola Company",
+               "kralyk",
+               "http://www.abclinuxu.cz/ankety/radio#83"),
     //Tomeš
     fortuna_sg("Ty asi budeš retartovaný jako většina místní verbeže.",
                "Petr Tomeš",
@@ -96,16 +109,10 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
     fortuna_sg("Wokna mnohým lidem vyhovujou víc. Ovšem ne proto, že by byly lepší, ale proto, že tito uživatelé jsou horší a platí svůj k svému ;)",
                "Ash",
                "http://www.abclinuxu.cz/ankety/microsoft-codeplex/diskuse#33"),
-       fortuna("Jardík: Mně to přijde trhaný\n"
-               "vlastikroot: Laguje ti mozek",
-               "http://www.abclinuxu.cz/blog/Standovo/2009/10/windows-7-prvni-zklamani/diskuse#146"),
        fortuna("AltOS: Bah! Az budou dlouhe zimni vecery, tak bych snad uz opravdu mohl \"vytvorit\" tu novou distribuci Gambrinux...\n"
                "Marek Stopka: Chtěl si říct Gambribuntu, ne?\n"
                "AltOS: Ne, chtel jsem rici openGAMBRINUSE.",
                "http://www.abclinuxu.cz/blog/puppylinux/2008/9/gnu-linux-vs-pivo#10"),
-    fortuna_sg("Svoboda zůstává obrovskou překážkou pro růst moci.",
-               "kralyk",
-               "http://www.abclinuxu.cz/blog/yet_another_blog/2010/1/hudebni-prumysl-nas-bavi/diskuse#2"),
     fortuna_sg("Ba dokonce to není ani smilstvo, což je s podivem, páč smilstvo je dnes snad úplně všecko.",
                "kralyk",
                "http://www.abclinuxu.cz/blog/zblepty/2009/7/proc-nebudu-volit-ceskou-piratskou-stranu/diskuse#555"),
@@ -130,6 +137,18 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
     fortuna_sg("Měříme si s kamarády uptime a pak si je ve škole porovnáváme, kdo ho má delší.",
                "Jenda",
                "http://www.abclinuxu.cz/blog/Untitled/2010/10/kernel-modul-kernel-ultras/diskuse#63"),
+    fortuna_sg("Z Van Helsinga bys měl snad už vědět, že Praha a Budapešť jsou dvě jména pro totéž.",
+               "Nicky 726",
+               "http://www.abclinuxu.cz/blog/itckar/2010/10/microsoft-vs.-skoda-120/diskuse#39"),
+    fortuna_sg("Kazdopadne nema zmysel riesit, preco sa z francuzkej skodovky v madarsku dymi z predu v reklame na shitosofti telefon :-)",
+               "msk",
+               "http://www.abclinuxu.cz/blog/itckar/2010/10/microsoft-vs.-skoda-120/diskuse#21"),
+    fortuna_sg("Je tu někdo z USA? Nechcete si patentovat \"Patentování dlouhodobě a obecně používané technologie za účelem získání výhodné právní pozice\" ?",
+               "Jakub Lucký",
+               "http://www.abclinuxu.cz/zpravicky/kodovani-videa-na-gpu-patentovano/diskuse#13"),
+    fortuna_sg("Držte svůj e-penis stále největší",
+               "Jakub Lucký",
+               "http://www.abclinuxu.cz/blog/Untitled/2010/10/kernel-modul-kernel-ultras/diskuse#61"),
     NULL
   },
   /*** /dev/finger ***/
@@ -158,11 +177,15 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
     "Arch je nejlepší linuxová distribuce",
     "Ubuntu je nejlepší linuxová distribuce",
     "Debian je nejlepší linuxová distribuce",
+    "Fedora je nejlepší linuxová distribuce",
+    "OpenSuse je nejlepší linuxová distribuce",
+    "Slackware je nejlepší linuxová distribuce",
     "MS Windows jsou již dnes velmi dobře zabezpečený systém",
     "Nebojte se, je to absolutně bezpečné",
     "01:56:43 up 327 days, 6:41, 1 user, load average: 0.46, 0.51, 0.57",
     "14:07:29 up 291 days, 16:21, 1 user, load average: 0.41, 0.52, 0.77",
     "15:16:59 up 488 days, 6:21, 1 user, load average: 0.40, 0.49, 0.55",
+    "640kB by mělo stačit všem",
     NULL
   },
 };
