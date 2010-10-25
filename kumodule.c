@@ -73,6 +73,9 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
        fortuna("Jardík: Mně to přijde trhaný\n"
                "vlastikroot: Laguje ti mozek",
                "http://www.abclinuxu.cz/blog/Standovo/2009/10/windows-7-prvni-zklamani/diskuse#146"),
+       fortuna("AsciiWolf: Chtělo by to upravit engine ábíčka tak, aby byl u blogů tag break vložen automaticky - před první obrázek, delší odstavec, atd...\n"
+               "Amigapower: A aby ti to přineslo pivo k televizi nechceš?",
+               "http://www.abclinuxu.cz/blog/txt/2010/10/zacala-tu-smrdet-mirna-cenzura-blogu.-koncim.-odchazim#43"),
     fortuna_sg("Politika a zločin k sobě neodlučitelně patří ... asi jako zubaři a The Coca-Cola Company",
                "kralyk",
                "http://www.abclinuxu.cz/ankety/radio#83"),
@@ -149,6 +152,13 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
     fortuna_sg("Držte svůj e-penis stále největší",
                "Jakub Lucký",
                "http://www.abclinuxu.cz/blog/Untitled/2010/10/kernel-modul-kernel-ultras/diskuse#61"),
+       fortuna("V (anonym):  Obhospodarovat Arch je ako spat s vlastnou zenou - nenadchne, ale postaci...\n"
+               "Karel Benák: Dovoluju si nesouhlasit, jsem ženatý 5 let a jsem stále nadšený :-)\n"
+               "kyytaM:      Z Archu, ci zo zeny?",
+               "http://www.abclinuxu.cz/blog/dw/2010/10/novy-ubuntu-font-je-fajn/diskuse#22"),
+    fortuna_sg("Ale tohle je portál o Linuxu - lidi se tedy v diskuzi pravděpodobně budou chtít bavit o něm. Kdyby lidé chtěli řešit politiku, půjdou jinam.",
+               "SPM",
+               "http://www.abclinuxu.cz/blog/plastique/2010/10/liberix-ukazal-skolakum-ubuntu/diskuse#101"),
     NULL
   },
   /*** /dev/finger ***/
