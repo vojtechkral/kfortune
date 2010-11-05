@@ -79,6 +79,28 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
     fortuna_sg("Politika a zločin k sobě neodlučitelně patří ... asi jako zubaři a The Coca-Cola Company",
                "kralyk",
                "http://www.abclinuxu.cz/ankety/radio#83"),
+    fortuna_sg("Ba dokonce to není ani smilstvo, což je s podivem, páč smilstvo je dnes snad úplně všecko.",
+               "kralyk",
+               "http://www.abclinuxu.cz/blog/zblepty/2009/7/proc-nebudu-volit-ceskou-piratskou-stranu/diskuse#555"),
+    fortuna_sg("Vždycky se najde eskymák, který vydá směrnici pro obyvatele rovníkové Afriky, jak se mají chovat v případě vlny neobvyklých veder.",
+               "Dalibor Smolík",
+               "http://www.abclinuxu.cz/blog/Mig_Alley/2010/10/kuba-zehli-7-kotev/diskuse#51"),
+    fortuna_sg("Marcelka je prostě docela dobrá samička, jenže s pavučinou přes lízátko, někde si to vybít holt musí...",
+               "Amigapower",
+               "http://www.abclinuxu.cz/blog/Strider_BSD_koutek/2010/10/svoboda-pro-vsechny/diskuse#167"),
+    fortuna_sg("Profil - kokot\n"
+               "Pokud jste kokot, přihlaste se a bude vám zobrazena vaše domovská stránka",
+               "AsciiWolf",
+               "http://www.abclinuxu.cz/blog/Mostly_IMDB/2010/10/sedm-kotev-aneb-jak-se-v-sedmi-krocich-zesmesnit/diskuse#223"),
+    fortuna_sg("Příští semestr si zapíšu předmět Administrace Windows jen proto, abych tam mohl přijít v triku KU.",
+               "kralyk",
+               "http://www.abclinuxu.cz/blog/BLB/2010/10/hleda-se-kernel-ultras-logistic-manager/diskuse#10"),
+       fortuna("kotyz: je 17:30 dostatecne mimo misu? :-D\n"
+               "kralyk: 17:30 obvykle bejvá míň mimo mísu než 14:00...",
+               "http://www.abclinuxu.cz/blog/Untitled/2010/11/viceznacne-zasifrovani-a-autorsky-zakon/diskuse#21"),
+       fortuna("qiRzT: Převést peníze na životy ještě nějak jde, ale opačně už to moc nejde. Jakou má cenu život dítěte?\n"
+               "Dalibor Smolík: Když se narodí, má tak kolem 3,5 kg. Je to i s kostí, takže za to moc peněz nebude :)",
+               "http://www.abclinuxu.cz/blog/pyx/2010/10/zrudy/diskuse#436"),
     //Tomeš
     fortuna_sg("Ty asi budeš retartovaný jako většina místní verbeže.",
                "Petr Tomeš",
@@ -116,9 +138,6 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
                "Marek Stopka: Chtěl si říct Gambribuntu, ne?\n"
                "AltOS: Ne, chtel jsem rici openGAMBRINUSE.",
                "http://www.abclinuxu.cz/blog/puppylinux/2008/9/gnu-linux-vs-pivo#10"),
-    fortuna_sg("Ba dokonce to není ani smilstvo, což je s podivem, páč smilstvo je dnes snad úplně všecko.",
-               "kralyk",
-               "http://www.abclinuxu.cz/blog/zblepty/2009/7/proc-nebudu-volit-ceskou-piratskou-stranu/diskuse#555"),
     fortuna_sg("S platností do konce roku budu vzorným křesťanem, nebudu číst Dawkinse, vzývat Cthulhu a přestanu zabíjet koťatka.",
                "kyknos",
                "http://www.abclinuxu.cz/blog/quid_novi/2009/12/prechazim-na-krestanstvi"),
