@@ -76,15 +76,18 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
        fortuna("AsciiWolf: Chtělo by to upravit engine ábíčka tak, aby byl u blogů tag break vložen automaticky - před první obrázek, delší odstavec, atd...\n"
                "Amigapower: A aby ti to přineslo pivo k televizi nechceš?",
                "http://www.abclinuxu.cz/blog/txt/2010/10/zacala-tu-smrdet-mirna-cenzura-blogu.-koncim.-odchazim#43"),
-    fortuna_sg("Politika a zločin k sobě neodlučitelně patří ... asi jako zubaři a The Coca-Cola Company",
-               "kralyk",
-               "http://www.abclinuxu.cz/ankety/radio#83"),
-    fortuna_sg("Ba dokonce to není ani smilstvo, což je s podivem, páč smilstvo je dnes snad úplně všecko.",
-               "kralyk",
-               "http://www.abclinuxu.cz/blog/zblepty/2009/7/proc-nebudu-volit-ceskou-piratskou-stranu/diskuse#555"),
+//    fortuna_sg("Politika a zločin k sobě neodlučitelně patří ... asi jako zubaři a The Coca-Cola Company",
+//               "kralyk",
+//               "http://www.abclinuxu.cz/ankety/radio#83"),
+//    fortuna_sg("Ba dokonce to není ani smilstvo, což je s podivem, páč smilstvo je dnes snad úplně všecko.",
+//               "kralyk",
+//               "http://www.abclinuxu.cz/blog/zblepty/2009/7/proc-nebudu-volit-ceskou-piratskou-stranu/diskuse#555"),
     fortuna_sg("Vždycky se najde eskymák, který vydá směrnici pro obyvatele rovníkové Afriky, jak se mají chovat v případě vlny neobvyklých veder.",
                "Dalibor Smolík",
                "http://www.abclinuxu.cz/blog/Mig_Alley/2010/10/kuba-zehli-7-kotev/diskuse#51"),
+    fortuna_sg("Asi stárnu, ale pro mě je odpočinek také procházka se psem. Ten nikdy nezklame. Zejména, když je krásně a člověk se může dívat na krásy přírody, zejména pokud mají minisukně. :-)",
+               "Dalibor Smolík",
+               "http://www.abclinuxu.cz/blog/BLB/2010/11/osude-mam-z-tebe-strach/diskuse#58"),
     fortuna_sg("Marcelka je prostě docela dobrá samička, jenže s pavučinou přes lízátko, někde si to vybít holt musí...",
                "Amigapower",
                "http://www.abclinuxu.cz/blog/Strider_BSD_koutek/2010/10/svoboda-pro-vsechny/diskuse#167"),
@@ -175,9 +178,27 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
                "Karel Benák: Dovoluju si nesouhlasit, jsem ženatý 5 let a jsem stále nadšený :-)\n"
                "kyytaM:      Z Archu, ci zo zeny?",
                "http://www.abclinuxu.cz/blog/dw/2010/10/novy-ubuntu-font-je-fajn/diskuse#22"),
+       fortuna("Jardík: Řetězce musí bít zarovnané vpravo.\n"
+               "tsLnox: A sakra. Jdu se zarovnat vlevo, nerad bych dostal řetězcem.",
+               "http://www.abclinuxu.cz/blog/jarda_bloguje/2010/11/gcc-umi-assembler-lepe-nez-ja#114"),
+       fortuna("Zprávička: Text ACTA byl vyjednán\n"
+               "heh: vzhuru na barikády....\n"
+               "Piškot: Co si to nejdříve přečíst ?\n"
+               "JS: Prectes si to na barikade. :-)",
+               "http://www.abclinuxu.cz/zpravicky/text-acta-byl-vyjednan#5"),
+       fortuna("Zprávička: Francouzská policie přechází na Ubuntu\n"
+               "heh: Po dlouhé době jedna smysluplná zprávička obsahující slovo \"ubuntu\".\n"
+               "Semo: To zas Ubuntu krivdis. Ale je to po dlhej dobe jedna zmysluplna spravicka obsahujuca slovo \"francuzska\".",
+               "http://www.abclinuxu.cz/zpravicky/francouzska-policie-prechazi-na-ubuntu/diskuse#4"),
+       fortuna("Dalibor Smolík: Když mi bylo 14 let, měli lékaři u mě podezření na lepru. Vážně, Dálný Východ .. naštěstí planý poplach.\n"
+               "jozka: Asi bys byl jediny ctrnactilety, ktery by se neradoval z toho, ze mu neco odpadne...",
+               "http://www.abclinuxu.cz/zpravicky/diakritika-v-.cz-domenach-opet-odmitnuta#34"),
     fortuna_sg("Ale tohle je portál o Linuxu - lidi se tedy v diskuzi pravděpodobně budou chtít bavit o něm. Kdyby lidé chtěli řešit politiku, půjdou jinam.",
                "SPM",
                "http://www.abclinuxu.cz/blog/plastique/2010/10/liberix-ukazal-skolakum-ubuntu/diskuse#101"),
+    fortuna_sg("Nakonec jsem rád, že se tu konkrétně tahle zprávička objevila, protože je zajímavá narozdíl od zpráviček, že zítra, pozítří a včera výjde třetí alpha verze Ubuntu Horny Heron.",
+               "Neel",
+               "http://www.abclinuxu.cz/zpravicky/ubuntu-prestane-pouzivat-x.org/diskuse#82"),
     NULL
   },
   /*** /dev/finger ***/
