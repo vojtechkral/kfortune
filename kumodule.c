@@ -76,12 +76,28 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
        fortuna("AsciiWolf: Chtělo by to upravit engine ábíčka tak, aby byl u blogů tag break vložen automaticky - před první obrázek, delší odstavec, atd...\n"
                "Amigapower: A aby ti to přineslo pivo k televizi nechceš?",
                "http://www.abclinuxu.cz/blog/txt/2010/10/zacala-tu-smrdet-mirna-cenzura-blogu.-koncim.-odchazim#43"),
+       fortuna("Amigapower: já chtěl k vánocům autolékárničku podle nový vyhlášky, ale stejně nemam vyměněnej řidičák, takže je to jedno...\n"
+               "Grunt: Ty máš řidičák? Který blázen?\n"
+               "Amigapower: To sis myslel, že jsem najezdil 300 000 km bez papírů?\n"
+               "SPM: Auto jezdí na benzin, ne na papíry ;)",
+               "http://www.abclinuxu.cz/blog/zabruceni/2010/12/gong-fu-cha/diskuse#72"),
+       fortuna("gtz: a co Comix s nějakou kočkou\n"
+               "Amigapower: V hlavě už je Comix s Marcelkou, bude mít děj se zápletkou ;-)\n"
+               "kotyz: a bude dostatecne oplzlej?\n"
+               "Amigapower: ...ty budeš Jaba",
+               "http://www.abclinuxu.cz/blog/BLB/2010/12/comix-kernel-ultras-0002/diskuse#16"),
 //    fortuna_sg("Politika a zločin k sobě neodlučitelně patří ... asi jako zubaři a The Coca-Cola Company",
 //               "kralyk",
 //               "http://www.abclinuxu.cz/ankety/radio#83"),
 //    fortuna_sg("Ba dokonce to není ani smilstvo, což je s podivem, páč smilstvo je dnes snad úplně všecko.",
 //               "kralyk",
 //               "http://www.abclinuxu.cz/blog/zblepty/2009/7/proc-nebudu-volit-ceskou-piratskou-stranu/diskuse#555"),
+    fortuna_sg("Příští semestr si zapíšu předmět Administrace Windows jen proto, abych tam mohl přijít v triku KU.",
+               "kralyk",
+               "http://www.abclinuxu.cz/blog/BLB/2010/10/hleda-se-kernel-ultras-logistic-manager/diskuse#10"),
+    fortuna_sg("Po F# vyvinou G♭, ale zjistí, že vyvinuli úplně to stejné...",
+               "kralyk",
+               "http://www.abclinuxu.cz/zpravicky/f-2.0-uvolnen-pod-open-source-licenci/diskuse#13"),
     fortuna_sg("Vždycky se najde eskymák, který vydá směrnici pro obyvatele rovníkové Afriky, jak se mají chovat v případě vlny neobvyklých veder.",
                "Dalibor Smolík",
                "http://www.abclinuxu.cz/blog/Mig_Alley/2010/10/kuba-zehli-7-kotev/diskuse#51"),
@@ -95,9 +111,6 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
                "Pokud jste kokot, přihlaste se a bude vám zobrazena vaše domovská stránka",
                "AsciiWolf",
                "http://www.abclinuxu.cz/blog/Mostly_IMDB/2010/10/sedm-kotev-aneb-jak-se-v-sedmi-krocich-zesmesnit/diskuse#223"),
-    fortuna_sg("Příští semestr si zapíšu předmět Administrace Windows jen proto, abych tam mohl přijít v triku KU.",
-               "kralyk",
-               "http://www.abclinuxu.cz/blog/BLB/2010/10/hleda-se-kernel-ultras-logistic-manager/diskuse#10"),
        fortuna("kotyz: je 17:30 dostatecne mimo misu? :-D\n"
                "kralyk: 17:30 obvykle bejvá míň mimo mísu než 14:00...",
                "http://www.abclinuxu.cz/blog/Untitled/2010/11/viceznacne-zasifrovani-a-autorsky-zakon/diskuse#21"),
@@ -199,6 +212,12 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
     fortuna_sg("Nakonec jsem rád, že se tu konkrétně tahle zprávička objevila, protože je zajímavá narozdíl od zpráviček, že zítra, pozítří a včera výjde třetí alpha verze Ubuntu Horny Heron.",
                "Neel",
                "http://www.abclinuxu.cz/zpravicky/ubuntu-prestane-pouzivat-x.org/diskuse#82"),
+    fortuna_sg("SP k Windows prý mají přinést volbu Disable DDOS, kterou když uživatel zaškrtne, tak bude chráněn. Zkusím zapátrat na Slunečnici jestli tam na to není už nějaká utilitka.",
+               "Xerces (anonym)",
+               "http://www.abclinuxu.cz/zpravicky/jak-se-vyporadat-s-ddos/diskuse#2"),
+    fortuna_sg("Chtělo by to nějaké prášky proti lenosti.",
+               "xkucf03",
+               "http://www.abclinuxu.cz/blog/jezkova_nora/2010/12/zda-se-mi-to/diskuse#39"),
     NULL
   },
   /*** /dev/finger ***/
