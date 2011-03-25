@@ -12,7 +12,6 @@
 #include <linux/module.h>
 #include <linux/random.h>
 #include <linux/slab.h>
-
 #include <asm/uaccess.h>
 
 
@@ -23,7 +22,7 @@
 
 const unsigned int ku_maxwidth = 100;             //width padding
 const unsigned int ku_fortune_maxsize = 1024;     //one-kilobyte-sized fortune should be enough for anybody
-#define fortuna(text, url) (text)
+#define fortuna(text, url) (text"\n")
 #define padding "                                                                    "
 #define fortuna_sg(text, author, url) (text"\n"padding"--"author)
 
@@ -86,9 +85,9 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
                "kotyz: a bude dostatecne oplzlej?\n"
                "Amigapower: ...ty budeš Jaba",
                "http://www.abclinuxu.cz/blog/BLB/2010/12/comix-kernel-ultras-0002/diskuse#16"),
-//    fortuna_sg("Politika a zločin k sobě neodlučitelně patří ... asi jako zubaři a The Coca-Cola Company",
-//               "kralyk",
-//               "http://www.abclinuxu.cz/ankety/radio#83"),
+    fortuna_sg("Politika a zločin k sobě neodlučitelně patří ... asi jako zubaři a The Coca-Cola Company",
+               "kralyk",
+               "http://www.abclinuxu.cz/ankety/radio#83"),
 //    fortuna_sg("Ba dokonce to není ani smilstvo, což je s podivem, páč smilstvo je dnes snad úplně všecko.",
 //               "kralyk",
 //               "http://www.abclinuxu.cz/blog/zblepty/2009/7/proc-nebudu-volit-ceskou-piratskou-stranu/diskuse#555"),
@@ -111,6 +110,12 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
                "Pokud jste kokot, přihlaste se a bude vám zobrazena vaše domovská stránka",
                "AsciiWolf",
                "http://www.abclinuxu.cz/blog/Mostly_IMDB/2010/10/sedm-kotev-aneb-jak-se-v-sedmi-krocich-zesmesnit/diskuse#223"),
+    fortuna_sg("Asimetrický. Asi metr vysoký, asi metr široký :-)",
+               "Dalibor Smolík",
+               "http://www.abclinuxu.cz/blog/kotyzblog/2010/12/alkehol-ultras-comix-remix-by-kotyz#20"),
+    fortuna_sg("ty vole! až do 21.12.2012 jen čínský polivky",
+               "Amigapower",
+               "http://www.abclinuxu.cz/blog/BLB/2011/2/dekujete-odchazite-tahnete-a-uz-se-nevracejte/diskuse#180"),
        fortuna("kotyz: je 17:30 dostatecne mimo misu? :-D\n"
                "kralyk: 17:30 obvykle bejvá míň mimo mísu než 14:00...",
                "http://www.abclinuxu.cz/blog/Untitled/2010/11/viceznacne-zasifrovani-a-autorsky-zakon/diskuse#21"),
@@ -206,6 +211,20 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
        fortuna("Dalibor Smolík: Když mi bylo 14 let, měli lékaři u mě podezření na lepru. Vážně, Dálný Východ .. naštěstí planý poplach.\n"
                "jozka: Asi bys byl jediny ctrnactilety, ktery by se neradoval z toho, ze mu neco odpadne...",
                "http://www.abclinuxu.cz/zpravicky/diakritika-v-.cz-domenach-opet-odmitnuta#34"),
+       fortuna("Marcela: Co jste to zas vytvrořil, brouku? Nechcete taky někdy zprznit sám sebe? :-)\n"
+               "Bedňa: Treba priložiť prst na klitoris a použíť rýchle pohyby. Hovorí sa tomu stimulácia nervových zakončení :-)\n"
+               "Amigapower: :-D  Já bych toho Paní (Slečnu???????????? Jak to vlastně je???????????) Marcelu třeba i dobrovolně ušetřil ;-)\n"
+               "Bedňa: To ja bysom som si tu stimuláciu minimálne rád pozrel :-)\n"
+               "Amigapower: 10€\n"
+               "Bedňa: To beru",
+               "http://www.abclinuxu.cz/blog/BLB/2011/1/comix-kernel-ultras-0019/diskuse#14"),
+       fortuna("Honz: K čemu je na ploše nějaká cizí pipka...?\n"
+               "vain: No přece si tam nebudeš dávat tu vlastní, kterou vidíš taky každý den ;-)",
+               "http://www.abclinuxu.cz/desktopy/drobek1015-20110128#11"),
+       fortuna("Hrabě Nikolič: Jak je to s tou rybou? <o))<\n"
+               "Mti.: Ryba smrdi od hlavy?\n"
+               "mirec: Ryba smrdí od ropy.",
+               "http://www.abclinuxu.cz/clanky/komiks-xkcd-857-archimedes/diskuse#51"),
     fortuna_sg("Ale tohle je portál o Linuxu - lidi se tedy v diskuzi pravděpodobně budou chtít bavit o něm. Kdyby lidé chtěli řešit politiku, půjdou jinam.",
                "SPM",
                "http://www.abclinuxu.cz/blog/plastique/2010/10/liberix-ukazal-skolakum-ubuntu/diskuse#101"),
@@ -218,6 +237,39 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
     fortuna_sg("Chtělo by to nějaké prášky proti lenosti.",
                "xkucf03",
                "http://www.abclinuxu.cz/blog/jezkova_nora/2010/12/zda-se-mi-to/diskuse#39"),
+    fortuna_sg("To já měl zas \"Ha! Láva fárá\". Pomůcka do Německy s úsměvem pro časování nepravidelných sloves. Funguje asi z 85 %, což bylo vhledem k hranici testu 50 %, zcela dostačující.",
+               "Voty",
+               "http://www.abclinuxu.cz/clanky/komiks-xkcd-809-los-alamos/diskuse#37"),
+    fortuna_sg("Já to začal psát do HTML dokumentů:\n  <meta name=\"generator\" content=\"Zmagnetizovana jehla, osciloskop, pevna ruka a dokumentace ext3 :-)\">",
+               "Jenda",
+               "http://www.abclinuxu.cz/clanky/komiks-xkcd-378-opravdovi-programatori/diskuse#3"),
+    fortuna_sg("Troll krmí trolla. Tohle jsem nikdy nepochopil jak může fungovat. To je jako když zloděje okrade zloděj. Nebo jako když markeťák naletí na reklamu.",
+               "Grunt",
+               "http://www.abclinuxu.cz/zpravicky/nokia-a-microsoft-zahajuji-spolupraci/diskuse#33"),
+    fortuna_sg("už sem Android měl v prackách na mašince od THC",
+               "Migilenik",
+               "http://www.abclinuxu.cz/blog/odi_et_amo/2011/2/pohreb-pro-nokia-a-meego-...-r.i.p/diskuse#20"),
+    fortuna_sg("Hurdisky jsou asi média s Hurdem.",
+               "Jenda",
+               "http://www.abclinuxu.cz/blog/Untitled/2011/2/vize-verbalniho-computingu/diskuse#14"),
+    fortuna_sg("Dobrý pant se hmatem nepozná. Pozná se ale olizem, musí studit.",
+               "frdrx",
+               "http://www.abclinuxu.cz/blog/reklamace/2010/7/prosba-o-radu#50"),
+    fortuna_sg("Mluvíte jako zapšklý dědek co závidí JJ živelnost, nadání a sex-appeal.",
+               "Marcela",
+               "http://www.abclinuxu.cz/blog/Strider_BSD_koutek/2010/8/napred-zabava-a-az-potom-prace/diskuse#400"),
+    fortuna_sg("Zakaznici SONY nepotrebuji sex. Uz z nima vymrdala SONY.",
+               "belisarivs",
+               "http://www.abclinuxu.cz/zpravicky/sony-ma-pravo-ziskat-informace-o-uzivatelich-geohot.com/diskuse#14"),
+    fortuna_sg("Když může měsíc způsobovat menstruaci, proč by nemohl způsobit zemětřesení? :-) By mě zajímalo, co z toho působí větší škody.",
+               "frdrx",
+               "http://www.abclinuxu.cz/blog/Annals_of_Taurelador/2011/3/mesic-a-zemetreseni/diskuse#20"),
+    fortuna_sg("to je zenska pivo a mliko :-D",
+               "kotyz",
+               "http://www.abclinuxu.cz/blog/kotyzblog/2010/12/alkehol-ultras-comix-remix-by-kotyz#3"),
+    fortuna_sg("$ TIME=12PM autoconf --with-knife --with-bible --sacrifice-dog",
+               "Kyosuke",
+               "http://www.abclinuxu.cz/clanky/programovani/cmake-zjednodus-si-zivot#3"),
     NULL
   },
   /*** /dev/finger ***/
@@ -375,6 +427,7 @@ static int __init ku_init(void)
   {
     for (j = 0; ku_fortunes[i][j]; j++);
     ku_fortunes_nums[i] = j;
+    //printk(KERN_INFO "kumodule: sizeof[%u]: %u\n", i, j);
   }
 
   return 0;
