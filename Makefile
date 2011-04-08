@@ -1,4 +1,4 @@
-obj-m := kumodule.o
+obj-m := kfortune.o
 
 KDIR  := /lib/modules/$(shell uname -r)/build
 PWD   := $(shell pwd)
