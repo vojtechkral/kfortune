@@ -46,7 +46,19 @@ static kf_dev kf_devs[kf_MAX_DEVS];
 
 /*  ──────────────────── Devices operation ──────────────────  */
 
-static int kf_dev_open(struct inode *inode, struct file  *file)
+static kf_dev *kf_get_kfdev(struct file *file)
+{
+  int i;
+
+  if (!file) return NULL;
+  for (i = 0; i < kf_MAX_DEVS; i++)
+  {
+    if (&kf_devs[i].dev == file->private_data) return &kf_devs[i];
+  }
+  return NULL;
+}
+
+static int kf_dev_open(struct inode *inode, struct file *file)
 {
   /*
    * Although this function doesn't actually do anything useful,
@@ -66,30 +78,26 @@ static int kf_dev_open(struct inode *inode, struct file  *file)
 static ssize_t kf_dev_read(struct file * file, char * buf,
                           size_t count, loff_t *ppos)
 {
+  //TODO:
+
+  kf_dev *dev;
+
   printk("kfortune: kf_dev_read: file->private_data = '%p'\n", file->private_data);
-  char *hello_str = "Hello, world!\n";
-  int len = strlen(hello_str); /* Don't include the null byte. */
-  /*
-   * We only support reading the whole string at once.
-   */
+  printk("kfortune: kf_dev_read: count = '%lu'\n", count);
+
+  if (!(dev = kf_get_kfdev(file))) return 0;
+
+  int len = strlen(dev->filename);
+
   if (count < len)
           return -EINVAL;
-  /*
-   * If file position is non-zero, then assume the string has
-   * been read and indicate there is no more data to be read.
-   */
+
   if (*ppos != 0)
           return 0;
-  /*
-   * Besides copying the string to the user provided buffer,
-   * this function also checks that the user has permission to
-   * write to the buffer, that it is mapped, etc.
-   */
-  if (copy_to_user(buf, hello_str, len))
+
+  if (copy_to_user(buf, dev->filename, len))
           return -EINVAL;
-  /*
-   * Tell the user how much data we wrote.
-   */
+
   *ppos = len;
 
   return len;
@@ -188,7 +196,6 @@ static int kf_proc_read(char *page, char **start, off_t off, int count, int *eof
 
 static int kf_proc_write(struct file *file, const char __user *buffer, unsigned long count, void *data)
 {
-  char fn[kf_MAX_DEV_NAME];
   char kbuf[ kf_MAX_DEV_NAME*5*kf_MAX_DEVS ];    //enough bytes
   int i;
   char *tmp = kbuf;
@@ -272,9 +279,14 @@ static int __init kfortune_init(void)
 
 static void __exit kfortune_exit(void)
 {
-  //TODO: Deregister devs !!!
+  //deregister devs
+  int i;
+  for (i = 0; i < kf_MAX_DEVS; i++)
+  {
+    kf_enable_dev(kf_devs+i, 0);
+  }
 
-  //Deregister procfs file
+  //deregister procfs file
   remove_proc_entry(kf_PROCFS_NAME, NULL);  //returns void, no checking, let's just hope it went ok...
 
   //kthxbai
