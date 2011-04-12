@@ -229,7 +229,7 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
                "mirec: Ryba smrdí od ropy.",
                "http://www.abclinuxu.cz/clanky/komiks-xkcd-857-archimedes/diskuse#51"),
        fortuna("xurfa: Klidek, to jen IPv6 fanatici vytvareji paniku, aby donutili vsechny ostatni prejit na ten jejich nedodelanej zmetek...\n"
-               "Proč lozit do záchranných člunů, když orchestr pořád hraje, že?",
+               "kip: Proč lozit do záchranných člunů, když orchestr pořád hraje, že?",
                "http://www.abclinuxu.cz/zpravicky/v-regionu-asie-pacific-dojdou-v-dubnu-ipv4-adresy/diskuse#10"),
     fortuna_sg("Ale tohle je portál o Linuxu - lidi se tedy v diskuzi pravděpodobně budou chtít bavit o něm. Kdyby lidé chtěli řešit politiku, půjdou jinam.",
                "SPM",
