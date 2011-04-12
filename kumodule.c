@@ -75,6 +75,9 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
        fortuna("AsciiWolf: Chtělo by to upravit engine ábíčka tak, aby byl u blogů tag break vložen automaticky - před první obrázek, delší odstavec, atd...\n"
                "Amigapower: A aby ti to přineslo pivo k televizi nechceš?",
                "http://www.abclinuxu.cz/blog/txt/2010/10/zacala-tu-smrdet-mirna-cenzura-blogu.-koncim.-odchazim#43"),
+       fortuna("belisarivs: A to mas jako dva holici strojky, jeden na vercajk a druhy na hubu?\n"
+               "Amigapower: Přece si nebudu holit ptáka stejnym, víš kolik je na xichtu bakterií?!",
+               "http://www.abclinuxu.cz/blog/BLB/2010/8/holite-si-pindoura#10"),
        fortuna("Amigapower: já chtěl k vánocům autolékárničku podle nový vyhlášky, ale stejně nemam vyměněnej řidičák, takže je to jedno...\n"
                "Grunt: Ty máš řidičák? Který blázen?\n"
                "Amigapower: To sis myslel, že jsem najezdil 300 000 km bez papírů?\n"
@@ -225,6 +228,9 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
                "Mti.: Ryba smrdi od hlavy?\n"
                "mirec: Ryba smrdí od ropy.",
                "http://www.abclinuxu.cz/clanky/komiks-xkcd-857-archimedes/diskuse#51"),
+       fortuna("xurfa: Klidek, to jen IPv6 fanatici vytvareji paniku, aby donutili vsechny ostatni prejit na ten jejich nedodelanej zmetek...\n"
+               "Proč lozit do záchranných člunů, když orchestr pořád hraje, že?",
+               "http://www.abclinuxu.cz/zpravicky/v-regionu-asie-pacific-dojdou-v-dubnu-ipv4-adresy/diskuse#10"),
     fortuna_sg("Ale tohle je portál o Linuxu - lidi se tedy v diskuzi pravděpodobně budou chtít bavit o něm. Kdyby lidé chtěli řešit politiku, půjdou jinam.",
                "SPM",
                "http://www.abclinuxu.cz/blog/plastique/2010/10/liberix-ukazal-skolakum-ubuntu/diskuse#101"),
@@ -270,6 +276,18 @@ static const char *ku_fortunes[ku_numdevices][ku_maxfortunes] =
     fortuna_sg("$ TIME=12PM autoconf --with-knife --with-bible --sacrifice-dog",
                "Kyosuke",
                "http://www.abclinuxu.cz/clanky/programovani/cmake-zjednodus-si-zivot#3"),
+    fortuna_sg("Pritelkyne ukladejte do tmp. Nikdy do home!",
+               "Dag",
+               "http://www.abclinuxu.cz/blog/instalace_vmwaru/2006/3/14/124648#8"),
+    fortuna_sg("Nemohu nevzpomenout onen pruzkum, ktery prisel na to, ze zhruba polovina mladych lidi vidi svou situaci optimisticky. Druha polovina nema na drogy penize.",
+               "jozka",
+               "http://www.abclinuxu.cz/blog/martinek/2011/4/ziji-v-krasne-dobe/diskuse#34"),
+    fortuna_sg("Donutili jste mne podivat se do analu :-)",
+               "jozka",
+               "http://www.abclinuxu.cz/blog/merlins/2011/4/ceny-benzinu/diskuse#145"),
+    fortuna_sg("asociál: člověk s vlastním názorem, jedinec nepodléhající tlaku davové psychologie, osobnost mimo úředně schválené sociální kategorie.",
+               "rADOn",
+               "http://www.abclinuxu.cz/blog/bloK/2011/3/joke-of-the-day/diskuse#5"),
     NULL
   },
   /*** /dev/finger ***/
