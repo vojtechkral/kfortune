@@ -12,36 +12,74 @@
 #include <linux/random.h>
 #include <linux/slab.h>
 #include <asm/uaccess.h>
-
 #include <linux/proc_fs.h>
+
 
 /*  ─────────────────────── Settings ────────────────────────  */
 
+//global:
 #define kf_MAX_DEV_NAME   16                // _INCLUDING_ the null char
 #define kf_MIN_DEV_NAME   2                 // _WITHOUT_ the null char
 #define kf_MAX_DEVS       8
 #define kf_PROCFS_NAME    "kfortune"
+
+//memory:
+#define kf_MAX_COOKIEDATA   1024*1024       //total bytes kfortune will ever alloc for cookies
+#define kf_ALLOC_CHUNK      32*1024
 
 /*  ─────────────────── Convenience macros ──────────────────  */
 
 #define STR_EXPAND(tok) #tok
 #define STR(tok) STR_EXPAND(tok)
 
+/*  ────────────────── Forward declaration ──────────────────  */
+
+static int kf_dev_open(struct inode *, struct file *);
+static ssize_t kf_dev_read(struct file *, char *, size_t, loff_t *);
+static ssize_t kf_dev_write(struct file *, const char *, size_t, loff_t *);
+static int kf_dev_release(struct inode *, struct file *);
+
 /*  ───────────────────────── Types ─────────────────────────  */
 
 typedef struct
 {
+
+} cookiedata;
+
+typedef struct
+{
   int active;
+  int writelock;
   char filename[kf_MAX_DEV_NAME];
   struct file_operations fops;
   struct miscdevice dev;
   //TODO: forutnes - data
 } kf_dev;
 
+void kf_dev_reset(kf_dev *dev)
+{
+  if (!dev) return;
+
+  dev->active = 0;
+  dev->writelock = 0;
+  strcpy(dev->filename, "");
+  dev->fops.owner = THIS_MODULE;
+  dev->fops.open = kf_dev_open;
+  dev->fops.read = kf_dev_read;
+  dev->fops.write = kf_dev_write;
+  dev->fops.release = kf_dev_release;
+  //dev->fops.
+  dev->dev.minor = MISC_DYNAMIC_MINOR;
+  dev->dev.name = dev->filename;            //let them point to the same statically-allocated area
+  dev->dev.fops = &dev->fops;
+}
+
 /*  ─────────────────────── Global Vars ─────────────────────  */
 
 static struct proc_dir_entry *kf_procfile;
 static kf_dev kf_devs[kf_MAX_DEVS];
+
+
 
 
 /*  ──────────────────── Devices operation ──────────────────  */
@@ -61,9 +99,9 @@ static kf_dev *kf_get_kfdev(struct file *file)
 static int kf_dev_open(struct inode *inode, struct file *file)
 {
   /*
-   * Although this function doesn't actually do anything useful,
+   * Although this function doesn't do much,
    * it's presence is vital, because if fops.open was NULL,
-   * the misc device driver would not hand over our miscdevice pointer
+   * the miscdevice driver would not hand over our miscdevice pointer
    * in file->private_data and there would be no way to identify which device
    * is being read or being written to in following two functions.
    *
@@ -71,25 +109,40 @@ static int kf_dev_open(struct inode *inode, struct file *file)
    *  in the main kernel git repo tree. Other drivers might differ.
    *  For reference see source code of your miscdevice driver.)
    */
-  printk("kfortune: kf_dev_open: file->private_data = '%p'\n", file->private_data);
+
+  kf_dev *dev;
+  if (!(dev = kf_get_kfdev(file))) return -EINVAL;
+
+  if (file->f_mode & FMODE_WRITE)
+  {
+    if (!dev->writelock)
+    {
+      dev->writelock = 1;                   //there may only be one write access at a time
+      //TODO: clear data and stuff...
+    } else
+    {
+      return -EPERM;
+    }
+  }
+
   return 0;
 }
 
-static ssize_t kf_dev_read(struct file * file, char * buf,
-                          size_t count, loff_t *ppos)
+static ssize_t kf_dev_read(struct file *file, char *buf, size_t size, loff_t *ppos)
 {
   //TODO:
 
   kf_dev *dev;
 
+  printk("kfortune: kf_dev_read: file = '%p'\n", file);
   printk("kfortune: kf_dev_read: file->private_data = '%p'\n", file->private_data);
-  printk("kfortune: kf_dev_read: count = '%lu'\n", count);
+  printk("kfortune: kf_dev_read: size = '%lu'\n", size);
 
-  if (!(dev = kf_get_kfdev(file))) return 0;
+  if (!(dev = kf_get_kfdev(file))) return -EINVAL;
 
   int len = strlen(dev->filename);
 
-  if (count < len)
+  if (size < len)
           return -EINVAL;
 
   if (*ppos != 0)
@@ -103,6 +156,27 @@ static ssize_t kf_dev_read(struct file * file, char * buf,
   return len;
 }
 
+static ssize_t kf_dev_write(struct file *file, const char *buf, size_t size, loff_t *ppos)
+{
+  //TODO:
+
+  printk("kfortune: kf_dev_write: file->private_data = '%p'\n", file->private_data);
+  printk("kfortune: kf_dev_write: size = '%lu'\n", size);
+  return size;
+}
+
+static int kf_dev_release(struct inode *inode, struct file *file)
+{
+  kf_dev *dev;
+  if (!(dev = kf_get_kfdev(file))) return -EINVAL;
+
+  if ((file->f_mode & FMODE_WRITE) && (dev->writelock))
+  {
+    dev->writelock = 0;
+  }
+
+  return 0;
+}
 
 /*  ──────────────── Procfs file and control ────────────────  */
 
@@ -137,8 +211,7 @@ static void kf_enable_dev(kf_dev *dev, int enable)
     }
     else
     {
-      dev->dev.minor = MISC_DYNAMIC_MINOR;
-      dev->active = 0;
+      kf_dev_reset(dev);
     }
   }
   if (enable)
@@ -246,18 +319,7 @@ static int __init kfortune_init(void)
 
   //Init kf_devs
   for (i = 0; i < kf_MAX_DEVS; i++)
-  {
-    if (!i) printk("kfortune: Init: &dev = '%p'\n", &kf_devs[i].dev);
-    kf_devs[i].active = 0;
-    strcpy(kf_devs[i].filename, "");
-    kf_devs[i].fops.owner = THIS_MODULE;
-    kf_devs[i].fops.read = kf_dev_read;
-    kf_devs[i].fops.open = kf_dev_open;
-    //kf_devs[i].fops.
-    kf_devs[i].dev.minor = MISC_DYNAMIC_MINOR;
-    kf_devs[i].dev.name = kf_devs[i].filename;       //let them point to the same statically-allocated area
-    kf_devs[i].dev.fops = &kf_devs[i].fops;
-  }
+    kf_dev_reset(kf_devs+i);
 
   //Register procfs file
   if (!(kf_procfile = create_proc_entry(kf_PROCFS_NAME, 0644, NULL)))
@@ -271,6 +333,7 @@ static int __init kfortune_init(void)
   }
 
   //kthxbai
+  //printk("kfortune: page size: %lu\n", PAGE_SIZE);
   printk(KERN_INFO "kfortune: loaded\n");
   return 0;
 }
