@@ -5,6 +5,7 @@
  */
 
 #include <linux/kernel.h>
+#include <linux/vmalloc.h>
 #include <linux/fs.h>
 #include <linux/init.h>
 #include <linux/miscdevice.h>
@@ -24,8 +25,11 @@
 #define kf_PROCFS_NAME    "kfortune"
 
 //memory:
-#define kf_MAX_COOKIEDATA   1024*1024       //total bytes kfortune will ever alloc for cookies
-#define kf_ALLOC_CHUNK      32*1024
+#define kf_MAX_COOKIEDATA  (1024*1024)      //total bytes kfortune will ever alloc for cookies
+#define kf_DATA_BLKSZ      (32*1024)
+#define kf_DATA_BLKNUM     (kf_MAX_COOKIEDATA/kf_DATA_BLKSZ)
+#define kf_INDX_BLKSZ      4096
+#define kf_INDX_BLKNUM     4
 
 /*  ─────────────────── Convenience macros ──────────────────  */
 
@@ -34,6 +38,7 @@
 
 /*  ────────────────── Forward declaration ──────────────────  */
 
+static size_t kf_overall_size(void);
 static int kf_dev_open(struct inode *, struct file *);
 static ssize_t kf_dev_read(struct file *, char *, size_t, loff_t *);
 static ssize_t kf_dev_write(struct file *, const char *, size_t, loff_t *);
@@ -41,37 +46,183 @@ static int kf_dev_release(struct inode *, struct file *);
 
 /*  ───────────────────────── Types ─────────────────────────  */
 
-typedef struct
-{
-
-} cookiedata;
+typedef char* kf_indxblock[kf_INDX_BLKSZ/sizeof(char*)];
 
 typedef struct
 {
-  int active;
-  int writelock;
+  size_t size_used;
+  char *block;
+} kf_blockinfo;
+
+typedef struct
+{
+  size_t size_used;
+  unsigned int numcookies;
+  unsigned int numblocks_data;
+  unsigned int numblocks_indx;
+  kf_indxblock *indx_tbl[kf_INDX_BLKNUM];
+  kf_blockinfo *data_tbl;
+} kf_cookiedata;
+
+typedef enum
+{
+  kf_DEV_ACTIVE     = 0x1,
+  kf_DEV_WRITELOCK  = 0x2,
+  kf_DEV_2B_CLEARED = 0x4,
+} kf_dev_state;
+
+typedef struct
+{
+  kf_dev_state state;
   char filename[kf_MAX_DEV_NAME];
   struct file_operations fops;
   struct miscdevice dev;
-  //TODO: forutnes - data
+  kf_cookiedata data;
 } kf_dev;
 
-void kf_dev_reset(kf_dev *dev)
+/*  ──────────────────── Types - Methods ────────────────────  */
+
+//printk("kfortune: kf_dev_read: file = '%p'\n", file);
+
+//cookiedata:
+void kf_cookiedata_init(kf_cookiedata *data)
+{
+  unsigned int i;
+
+  if (!data) return;
+
+  data->size_used = 0;
+  data->numcookies = 0;
+  data->numblocks_data = 0;
+  data->numblocks_indx = 0;
+  for (i = 0; i < kf_INDX_BLKNUM; i++) data->indx_tbl[i] = NULL;
+  data->data_tbl = NULL;
+}
+
+void kf_cookiedata_clear(kf_cookiedata *data)
+{
+  unsigned int i;
+
+  if (!data) return;
+
+  for (i = 0; i < data->numblocks_indx; i++)
+  {
+    if (data->indx_tbl[i]) kfree(data->indx_tbl[i]);
+  }
+  for (i = 0; i < data->numblocks_data; i++)
+  {
+    if (data->data_tbl[i].block) vfree(data->data_tbl[i].block);
+  }
+  vfree(data->data_tbl);
+
+  kf_cookiedata_init(data);
+}
+
+char *kf_cookiedata_get(kf_cookiedata *data, unsigned int n)
+{
+  unsigned int block_n;
+  unsigned int offset;
+
+  //check:
+  if ((n >= data->numcookies) || (!data->data_tbl)) return NULL;
+
+  block_n = n / (kf_INDX_BLKSZ/sizeof(char*));
+  offset = n - block_n;
+
+  return (*(data->indx_tbl[block_n]))[offset];
+}
+
+int kf_cookiedata_add(kf_cookiedata *data, const char* cookie, size_t size)
+{
+  unsigned int i;
+  kf_blockinfo *block = NULL;
+  kf_blockinfo *newtbl = NULL;
+  char *target = NULL;
+  unsigned int idx_block = 0;
+  unsigned int idx_offset = 0;
+
+  //initial checks:
+  if ((!data) || (!cookie) || (!size)) return -1;                 //args sanity
+  if (size > kf_DATA_BLKSZ) return -2;                            //size of the cookie
+  if ((kf_overall_size() + size) > kf_MAX_COOKIEDATA) return -3;  //overall cookie data size
+  idx_block = data->numcookies / (kf_INDX_BLKSZ/sizeof(char*));
+  idx_offset = data->numcookies - idx_block;
+  if (idx_block >= kf_INDX_BLKNUM) return -4;                     //index size check
+
+  //get block with enough free space:
+  for (i = 0; (i < data->numblocks_data) && (!block); i++)
+  {
+    if ((kf_DATA_BLKSZ - data->data_tbl[i].size_used) > size) block = data->data_tbl+i;
+       //  - operator > only, not >=, because +1 byte is needed for final '\0'
+  }
+
+  if (data->numblocks_data >= kf_DATA_BLKNUM) return -5;
+
+  if (!block)
+  {
+    //if there was none, lets allocate & init a new one:
+    i = data->numblocks_data;         //(should already equal so, but one can never know...)
+    newtbl = vmalloc((data->numblocks_data+1)*sizeof(kf_blockinfo));
+      if (!newtbl) return -6;
+    if (data->data_tbl)
+    {
+      memcpy(newtbl, data->data_tbl, (data->numblocks_data)*sizeof(kf_blockinfo));   //copy previous blockinfos
+      vfree(data->data_tbl);
+    }
+    data->data_tbl = newtbl;
+    block = data->data_tbl+i;
+    block->size_used = 0;
+    block->block = vmalloc(kf_DATA_BLKSZ);
+      if (!block->block) return -6;    //kf_cookiedata_clear will take care
+    data->numblocks_data++;
+  }
+  printk("kfortune: block = %p\n", block);
+
+  //get pointer within block:
+  target = (block->block+block->size_used);
+
+  //update index:
+  if (!data->indx_tbl[idx_block])
+  {
+    //this block is not allocated yet, let's do it:
+    kf_indxblock *ptr;
+    ptr = kmalloc(sizeof(kf_indxblock), GFP_KERNEL);
+      if (!ptr) return -6;              //new datablock might have been allocated, but it don't
+                                        //matter as data knows about that so it won't leak
+    data->indx_tbl[idx_block] = ptr;
+  }
+  (*(data->indx_tbl[idx_block]))[idx_offset] = target;
+
+  //copy data:
+  memcpy(target, cookie, size);
+  target[size] = '\0';              //NOTE: we don't care if cookie string contains '\0', we don't need to
+  size++;                           //because of '\0'
+
+  //update metadata:
+  data->numcookies++;
+  block->size_used += size;
+  data->size_used += size;
+
+  //kthxbai:
+  return 0;
+}
+
+//kf_dev:
+void kf_dev_init(kf_dev *dev)
 {
   if (!dev) return;
 
-  dev->active = 0;
-  dev->writelock = 0;
+  dev->state = 0;
   strcpy(dev->filename, "");
   dev->fops.owner = THIS_MODULE;
   dev->fops.open = kf_dev_open;
   dev->fops.read = kf_dev_read;
   dev->fops.write = kf_dev_write;
   dev->fops.release = kf_dev_release;
-  //dev->fops.
   dev->dev.minor = MISC_DYNAMIC_MINOR;
   dev->dev.name = dev->filename;            //let them point to the same statically-allocated area
   dev->dev.fops = &dev->fops;
+  kf_cookiedata_clear(&dev->data);
 }
 
 /*  ─────────────────────── Global Vars ─────────────────────  */
@@ -81,8 +232,15 @@ static kf_dev kf_devs[kf_MAX_DEVS];
 
 
 
-
 /*  ──────────────────── Devices operation ──────────────────  */
+
+static size_t kf_overall_size(void)
+{
+  unsigned int i;
+  size_t overall = 0;
+  for (i = 0; i < kf_MAX_DEVS; i++) overall += kf_devs[i].data.size_used;
+  return overall;
+}
 
 static kf_dev *kf_get_kfdev(struct file *file)
 {
@@ -99,11 +257,11 @@ static kf_dev *kf_get_kfdev(struct file *file)
 static int kf_dev_open(struct inode *inode, struct file *file)
 {
   /*
-   * Although this function doesn't do much,
-   * it's presence is vital, because if fops.open was NULL,
-   * the miscdevice driver would not hand over our miscdevice pointer
-   * in file->private_data and there would be no way to identify which device
-   * is being read or being written to in following two functions.
+   * This function's presence is vital (even if it did onthing),
+   * because if fops.open was NULL, the miscdevice driver would
+   * not hand over our miscdevice pointer in file->private_data
+   * and there would be no way to identify which device is being
+   * read or being written to in following two functions.
    *
    * (NOTE: this is based on latest version of miscdevice driver
    *  in the main kernel git repo tree. Other drivers might differ.
@@ -115,16 +273,21 @@ static int kf_dev_open(struct inode *inode, struct file *file)
 
   if (file->f_mode & FMODE_WRITE)
   {
-    if (!dev->writelock)
+    if (!(dev->state & kf_DEV_WRITELOCK))
     {
-      dev->writelock = 1;                   //there may only be one write access at a time
-      //TODO: clear data and stuff...
+      dev->state |= (kf_DEV_WRITELOCK | kf_DEV_2B_CLEARED);
+      /* Lock this down: there may only be one write access at a time.
+       * NOTE: Race condition won't occur here, because
+       * miscdevice driver has a mutex locked during whole fops.open().
+       * Also, set the 2B_CLEARED flag on. Data will be cleared later
+       * (either by write() or release()), right now let's just return
+       * so that the mutex is unlocked asap.
+       */
     } else
     {
       return -EPERM;
     }
   }
-
   return 0;
 }
 
@@ -133,14 +296,11 @@ static ssize_t kf_dev_read(struct file *file, char *buf, size_t size, loff_t *pp
   //TODO:
 
   kf_dev *dev;
-
-  printk("kfortune: kf_dev_read: file = '%p'\n", file);
-  printk("kfortune: kf_dev_read: file->private_data = '%p'\n", file->private_data);
-  printk("kfortune: kf_dev_read: size = '%lu'\n", size);
+  size_t len;
 
   if (!(dev = kf_get_kfdev(file))) return -EINVAL;
 
-  int len = strlen(dev->filename);
+  len = strlen(dev->filename);
 
   if (size < len)
           return -EINVAL;
@@ -160,8 +320,11 @@ static ssize_t kf_dev_write(struct file *file, const char *buf, size_t size, lof
 {
   //TODO:
 
-  printk("kfortune: kf_dev_write: file->private_data = '%p'\n", file->private_data);
-  printk("kfortune: kf_dev_write: size = '%lu'\n", size);
+  //TODO: clear data if flag
+
+  //parsing
+  //saving
+
   return size;
 }
 
@@ -170,15 +333,18 @@ static int kf_dev_release(struct inode *inode, struct file *file)
   kf_dev *dev;
   if (!(dev = kf_get_kfdev(file))) return -EINVAL;
 
-  if ((file->f_mode & FMODE_WRITE) && (dev->writelock))
+  if ((file->f_mode & FMODE_WRITE) && (dev->state & kf_DEV_WRITELOCK))
   {
-    dev->writelock = 0;
+    //TODO: clear data if flag
+    dev->state &= ~kf_DEV_WRITELOCK;
   }
 
   return 0;
 }
 
 /*  ──────────────── Procfs file and control ────────────────  */
+
+//TODO: add open() (because of blank write access)
 
 static int kf_check_dev_name(const char *fn)
 {
@@ -199,11 +365,10 @@ static int kf_check_dev_name(const char *fn)
 
 static void kf_enable_dev(kf_dev *dev, int enable)
 {
-  if ((!dev->active) && (!enable)) return;  //no work needed
-  if (dev->active)
+  if ((!(dev->state & kf_DEV_ACTIVE)) && (!enable)) return;  //no work needed
+  if (dev->state & kf_DEV_ACTIVE)
   {
     //deregister
-    printk("kfortune: deregistering device '%s'\n", dev->filename);
     if (misc_deregister(&dev->dev))
     {
       printk(KERN_ERR "kfortune: Error: Unable to deregister device '%s'\n", dev->filename);
@@ -211,7 +376,7 @@ static void kf_enable_dev(kf_dev *dev, int enable)
     }
     else
     {
-      kf_dev_reset(dev);
+      kf_dev_init(dev);
     }
   }
   if (enable)
@@ -224,8 +389,7 @@ static void kf_enable_dev(kf_dev *dev, int enable)
     }
     else
     {
-      printk("kfortune: misc_register ok, minor = '%u'\n", dev->dev.minor);
-      dev->active = 1;
+      dev->state |= kf_DEV_ACTIVE;
     }
   }
 }
@@ -234,18 +398,19 @@ static void kf_enable_dev(kf_dev *dev, int enable)
 static int kf_proc_read(char *page, char **start, off_t off, int count, int *eof, void *data)
 {
   char buffer[ kf_MAX_DEVS * kf_REPORT_LINE_SZ ];
-  ssize_t written = 0;
+  size_t written = 0;
   int i;
 
   if (off) return 0;               //no reading from the middle of the file
 
   //write kfortune status info lines:
+  //  TODO: this might as well need update. A helper func would be nice...
   for (i = 0; i < kf_MAX_DEVS; i++)
   {
     int len = 0;
-    if (kf_devs[i].active)
+    if (kf_devs[i].state & kf_DEV_ACTIVE)
       len = snprintf(buffer+written, kf_REPORT_LINE_SZ,
-                     " #%d:\t/dev/%s\t%u cookies\n", i, kf_devs[i].filename, 0);
+                     " #%d:\t/dev/%s\t%u cookies\n", i, kf_devs[i].filename, kf_devs[i].data.numcookies);
     else
       len = snprintf(buffer+written, kf_REPORT_LINE_SZ,
                      " #%d:\t(inactive)\n", i);
@@ -275,7 +440,6 @@ static int kf_proc_write(struct file *file, const char __user *buffer, unsigned 
   size_t len;
   int dev_no = 0;
 
-  printk("kfortune: count = '%lu'\n", count);
   //checks:
   if (count >= sizeof(kbuf))
     return -ENOSPC;
@@ -294,7 +458,6 @@ static int kf_proc_write(struct file *file, const char __user *buffer, unsigned 
       if (kf_check_dev_name(match))
       {
         strcpy(kf_devs[dev_no].filename, match);    //since we already checked the length, it's ok to use strcpy (I hope)
-        printk("kfortune: match = '%s'\n", match);
         kf_enable_dev(&kf_devs[dev_no], 1);
         dev_no++;
       }
@@ -303,7 +466,6 @@ static int kf_proc_write(struct file *file, const char __user *buffer, unsigned 
   //disable remaining devs:
   for (i = dev_no; i < kf_MAX_DEVS; i++)
   {
-    printk("kfortune: disable dev: i = '%d'\n", i);
     kf_enable_dev(kf_devs+i, 0);
   }
 
@@ -319,7 +481,7 @@ static int __init kfortune_init(void)
 
   //Init kf_devs
   for (i = 0; i < kf_MAX_DEVS; i++)
-    kf_dev_reset(kf_devs+i);
+    kf_dev_init(kf_devs+i);
 
   //Register procfs file
   if (!(kf_procfile = create_proc_entry(kf_PROCFS_NAME, 0644, NULL)))
@@ -333,7 +495,6 @@ static int __init kfortune_init(void)
   }
 
   //kthxbai
-  //printk("kfortune: page size: %lu\n", PAGE_SIZE);
   printk(KERN_INFO "kfortune: loaded\n");
   return 0;
 }
@@ -353,7 +514,7 @@ static void __exit kfortune_exit(void)
   remove_proc_entry(kf_PROCFS_NAME, NULL);  //returns void, no checking, let's just hope it went ok...
 
   //kthxbai
-  printk(KERN_INFO "kfortune: unloaded\n");
+  printk(KERN_INFO "kfortune: unloaded\n-------------------------------\n");
 }
 
 /*  ────────────────────── Module macros ────────────────────  */
