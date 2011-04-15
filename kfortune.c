@@ -25,6 +25,7 @@
 #define kf_PROCFS_NAME    "kfortune"
 
 //memory:
+#define kf_MAX_COOKIESZ    (4*1024)         //max size of one cookie in bytes
 #define kf_MAX_COOKIEDATA  (1024*1024)      //total bytes kfortune will ever alloc for cookies
 #define kf_DATA_BLKSZ      (32*1024)
 #define kf_DATA_BLKNUM     (kf_MAX_COOKIEDATA/kf_DATA_BLKSZ)
@@ -33,8 +34,8 @@
 
 /*  ─────────────────── Convenience macros ──────────────────  */
 
-#define STR_EXPAND(tok) #tok
-#define STR(tok) STR_EXPAND(tok)
+#define kf_STR_EXPAND(tok) #tok
+#define kf_STR(tok) kf_STR_EXPAND(tok)
 
 /*  ────────────────── Forward declaration ──────────────────  */
 
@@ -77,6 +78,7 @@ typedef struct
   char filename[kf_MAX_DEV_NAME];
   struct file_operations fops;
   struct miscdevice dev;
+  char cookiebuffer[kf_MAX_COOKIESZ];
   kf_cookiedata data;
 } kf_dev;
 
@@ -143,7 +145,7 @@ int kf_cookiedata_add(kf_cookiedata *data, const char* cookie, size_t size)
 
   //initial checks:
   if ((!data) || (!cookie) || (!size)) return -1;                 //args sanity
-  if (size > kf_DATA_BLKSZ) return -2;                            //size of the cookie
+  if (size > kf_MAX_COOKIESZ) return -2;                          //size of the cookie
   if ((kf_overall_size() + size) > kf_MAX_COOKIEDATA) return -3;  //overall cookie data size
   idx_block = data->numcookies / (kf_INDX_BLKSZ/sizeof(char*));
   idx_offset = data->numcookies - idx_block;
@@ -176,7 +178,6 @@ int kf_cookiedata_add(kf_cookiedata *data, const char* cookie, size_t size)
       if (!block->block) return -6;    //kf_cookiedata_clear will take care
     data->numblocks_data++;
   }
-  printk("kfortune: block = %p\n", block);
 
   //get pointer within block:
   target = (block->block+block->size_used);
@@ -196,6 +197,7 @@ int kf_cookiedata_add(kf_cookiedata *data, const char* cookie, size_t size)
   //copy data:
   memcpy(target, cookie, size);
   target[size] = '\0';              //NOTE: we don't care if cookie string contains '\0', we don't need to
+     printk("kfortune: cookie added: %s\n", target);
   size++;                           //because of '\0'
 
   //update metadata:
@@ -223,6 +225,7 @@ void kf_dev_init(kf_dev *dev)
   dev->dev.name = dev->filename;            //let them point to the same statically-allocated area
   dev->dev.fops = &dev->fops;
   kf_cookiedata_clear(&dev->data);
+  memset(dev->cookiebuffer, 0, sizeof(dev->cookiebuffer));
 }
 
 /*  ─────────────────────── Global Vars ─────────────────────  */
@@ -257,15 +260,14 @@ static kf_dev *kf_get_kfdev(struct file *file)
 static int kf_dev_open(struct inode *inode, struct file *file)
 {
   /*
-   * This function's presence is vital (even if it did onthing),
+   * This function's presence is vital (even if it did nothing),
    * because if fops.open was NULL, the miscdevice driver would
    * not hand over our miscdevice pointer in file->private_data
    * and there would be no way to identify which device is being
-   * read or being written to in following two functions.
+   * read or being written to in other fops.
    *
    * (NOTE: this is based on latest version of miscdevice driver
-   *  in the main kernel git repo tree. Other drivers might differ.
-   *  For reference see source code of your miscdevice driver.)
+   *  in the main kernel git repo tree. Other drivers might differ.)
    */
 
   kf_dev *dev;
@@ -281,7 +283,7 @@ static int kf_dev_open(struct inode *inode, struct file *file)
        * miscdevice driver has a mutex locked during whole fops.open().
        * Also, set the 2B_CLEARED flag on. Data will be cleared later
        * (either by write() or release()), right now let's just return
-       * so that the mutex is unlocked asap.
+       * so that the mutex can be unlocked asap.
        */
     } else
     {
@@ -293,13 +295,12 @@ static int kf_dev_open(struct inode *inode, struct file *file)
 
 static ssize_t kf_dev_read(struct file *file, char *buf, size_t size, loff_t *ppos)
 {
-  //TODO:
-
   kf_dev *dev;
   size_t len;
 
   if (!(dev = kf_get_kfdev(file))) return -EINVAL;
 
+  //get random cookie
   len = strlen(dev->filename);
 
   if (size < len)
@@ -316,14 +317,69 @@ static ssize_t kf_dev_read(struct file *file, char *buf, size_t size, loff_t *pp
   return len;
 }
 
+const char *kf_sndelim(const char *s, size_t size)
+{
+  /* This function searches for a cookie delimiter substring,
+   * namely "\n%\n". Due to performance, it is implemented using
+   * a finite state machine. The downside is that the delimiter
+   * is thus hardcoded (but I personaly don't give a damn :p).
+   */
+#define kf_SNDELIM_GET if(pos >= size) goto not_found; else c = s[pos]; pos++
+  size_t pos = 0;
+  const char *res;
+  char c;
+
+  if (!s) return NULL;
+  start:
+    kf_SNDELIM_GET;
+    if (c != '\n') goto start;
+  found_1st_nl:
+    res = &s[pos-1];
+    kf_SNDELIM_GET;
+    if (c == '%') goto found_percent;
+    else if (c == '\n') goto found_1st_nl;
+    else goto start;
+  found_percent:
+    kf_SNDELIM_GET;
+    if (c == '\n') return res;
+    else goto start;
+  not_found:
+    return NULL;
+}
+
 static ssize_t kf_dev_write(struct file *file, const char *buf, size_t size, loff_t *ppos)
 {
-  //TODO:
+  kf_dev *dev;
+  const char *pos = buf;
+  const char *hit = NULL;
 
-  //TODO: clear data if flag
+  if (!(dev = kf_get_kfdev(file))) return -EINVAL;
+
+  //clear data if the clear flag is set
+  if (dev->state & kf_DEV_2B_CLEARED)
+  {
+    kf_cookiedata_clear(&dev->data);
+    dev->state &= ~kf_DEV_2B_CLEARED;
+  }
+
+  //TODO: checks, residual buffer
 
   //parsing
-  //saving
+  hit = kf_sndelim(pos, size);
+  while (hit)
+  {
+    size_t sz = hit-pos;
+    if (sz && (sz <= kf_MAX_COOKIESZ))
+    {
+      //a valid cookie has been found
+      //first copy it into kernel memory
+      if (copy_from_user(dev->cookiebuffer, pos, sz)) ; //TODO: error
+      printk("kfortune: kf_cookiedata_add: %d\n",
+          kf_cookiedata_add(&dev->data, dev->cookiebuffer, sz));    //and save it
+    }
+    pos = hit+2;                                        //...so that zero length cookies are recognized as such
+    hit = kf_sndelim(pos, size);
+  }
 
   return size;
 }
@@ -335,32 +391,12 @@ static int kf_dev_release(struct inode *inode, struct file *file)
 
   if ((file->f_mode & FMODE_WRITE) && (dev->state & kf_DEV_WRITELOCK))
   {
-    //TODO: clear data if flag
-    dev->state &= ~kf_DEV_WRITELOCK;
+    //clear data if the clear flag is set
+    if (dev->state & kf_DEV_2B_CLEARED) kf_cookiedata_clear(&dev->data);
+    dev->state &= ~(kf_DEV_WRITELOCK | kf_DEV_2B_CLEARED);
   }
 
   return 0;
-}
-
-/*  ──────────────── Procfs file and control ────────────────  */
-
-//TODO: add open() (because of blank write access)
-
-static int kf_check_dev_name(const char *fn)
-{
-  size_t len = strlen(fn);
-  size_t i;
-  for (i = 0; i < len; i++)
-  {
-    int c = fn[i];
-    if (
-        ((c < 0x30) || (c > 0x39)) &&                     //0-9
-        ((c < 0x41) || (c > 0x5a)) &&                     //A-Z
-        (c != '_') &&                                     // _
-        ((c < 0x61) || (c > 0x7a))                        //a-z
-       ) return 0;  //aka false
-  }
-  return 1;         //aka true
 }
 
 static void kf_enable_dev(kf_dev *dev, int enable)
@@ -392,6 +428,28 @@ static void kf_enable_dev(kf_dev *dev, int enable)
       dev->state |= kf_DEV_ACTIVE;
     }
   }
+}
+
+
+/*  ───────────────────── Procfs file ───────────────────────  */
+
+//TODO: add open() (because of blank write access)
+
+static int kf_check_dev_name(const char *fn)
+{
+  size_t len = strlen(fn);
+  size_t i;
+  for (i = 0; i < len; i++)
+  {
+    int c = fn[i];
+    if (
+        ((c < 0x30) || (c > 0x39)) &&                     //0-9
+        ((c < 0x41) || (c > 0x5a)) &&                     //A-Z
+        (c != '_') &&                                     // _
+        ((c < 0x61) || (c > 0x7a))                        //a-z
+       ) return 0;  //aka false
+  }
+  return 1;         //aka true
 }
 
 #define kf_REPORT_LINE_SZ  (kf_MAX_DEV_NAME+128)
