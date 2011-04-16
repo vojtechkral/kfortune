@@ -67,9 +67,10 @@ typedef struct
 
 typedef enum
 {
-  kf_DEV_ACTIVE     = 0x1,
-  kf_DEV_WRITELOCK  = 0x2,
-  kf_DEV_2B_CLEARED = 0x4,
+  kf_DEV_ACTIVE     = (1 << 0),
+  kf_DEV_WRITELOCK  = (1 << 1),
+  kf_DEV_2B_CLEARED = (1 << 2),
+  kf_DEV_ERRORLOCK  = (1 << 3),
 } kf_dev_state;
 
 typedef struct
@@ -83,8 +84,6 @@ typedef struct
 } kf_dev;
 
 /*  ──────────────────── Types - Methods ────────────────────  */
-
-//printk("kfortune: kf_dev_read: file = '%p'\n", file);
 
 //cookiedata:
 void kf_cookiedata_init(kf_cookiedata *data)
@@ -126,6 +125,7 @@ char *kf_cookiedata_get(kf_cookiedata *data, unsigned int n)
   unsigned int offset;
 
   //check:
+  if (!data) return NULL;
   if ((n >= data->numcookies) || (!data->data_tbl)) return NULL;
 
   block_n = n / (kf_INDX_BLKSZ/sizeof(char*));
@@ -235,6 +235,24 @@ static kf_dev kf_devs[kf_MAX_DEVS];
 
 
 
+
+
+
+/*  ──────────────────────── Random ─────────────────────────  */
+static unsigned int kf_random(unsigned int limit)
+{
+  /* This function generates a random number.
+   * The rsult is always at least one less than limit
+   */
+  unsigned int res = 0;
+
+  if (!limit) return 0;
+  get_random_bytes(&res, sizeof(res));
+  res %= limit;
+  return res;
+}
+
+
 /*  ──────────────────── Devices operation ──────────────────  */
 
 static size_t kf_overall_size(void)
@@ -273,6 +291,8 @@ static int kf_dev_open(struct inode *inode, struct file *file)
   kf_dev *dev;
   if (!(dev = kf_get_kfdev(file))) return -EINVAL;
 
+  //state checks:
+  if (dev->state & kf_DEV_ERRORLOCK) return -EPERM;
   if (file->f_mode & FMODE_WRITE)
   {
     if (!(dev->state & kf_DEV_WRITELOCK))
@@ -296,25 +316,37 @@ static int kf_dev_open(struct inode *inode, struct file *file)
 static ssize_t kf_dev_read(struct file *file, char *buf, size_t size, loff_t *ppos)
 {
   kf_dev *dev;
+  const char* cookie;
   size_t len;
 
+  if (*ppos) return 0;                 //If the position is non-zero, assume cookie has been read
+                                       //reading cookies from in the middle is not supported
+
+  //get the device:
   if (!(dev = kf_get_kfdev(file))) return -EINVAL;
 
-  //get random cookie
-  len = strlen(dev->filename);
+  //check errorlock:
+  if (dev->state & kf_DEV_ERRORLOCK) return -EPERM;
 
-  if (size < len)
-          return -EINVAL;
+  //get random cookie:
+  cookie = kf_cookiedata_get(&dev->data, kf_random(dev->data.numcookies));
 
-  if (*ppos != 0)
-          return 0;
+  if (!cookie)
+  {
+    len = 0;
+    goto no_cookies;
+  }
+  else len = strlen(cookie);
+  if (len >= size) return -EINVAL;     // >= because final '\n' must fit in there too
 
-  if (copy_to_user(buf, dev->filename, len))
-          return -EINVAL;
+  //copy data to the user:
+  if (copy_to_user(buf, cookie, len)) return -EINVAL;
+  no_cookies:
+  if (copy_to_user(buf+len, "\n", 1)) return -EINVAL;
 
-  *ppos = len;
-
-  return len;
+  //kthxbai:
+  *ppos = len+1;
+  return len+1;
 }
 
 const char *kf_sndelim(const char *s, size_t size)
@@ -324,7 +356,7 @@ const char *kf_sndelim(const char *s, size_t size)
    * a finite state machine. The downside is that the delimiter
    * is thus hardcoded (but I personaly don't give a damn :p).
    */
-#define kf_SNDELIM_GET if(pos >= size) goto not_found; else c = s[pos]; pos++
+#define kf_SNDELIM_GET if(pos >= size) goto not_found; else c = s[pos++]
   size_t pos = 0;
   const char *res;
   char c;
@@ -355,16 +387,17 @@ static ssize_t kf_dev_write(struct file *file, const char *buf, size_t size, lof
 
   if (!(dev = kf_get_kfdev(file))) return -EINVAL;
 
-  //clear data if the clear flag is set
+  //clear data if the clear flag is set:
   if (dev->state & kf_DEV_2B_CLEARED)
   {
     kf_cookiedata_clear(&dev->data);
     dev->state &= ~kf_DEV_2B_CLEARED;
   }
+  if (dev->state & kf_DEV_ERRORLOCK) return -EPERM;
 
   //TODO: checks, residual buffer
 
-  //parsing
+  //parsing:
   hit = kf_sndelim(pos, size);
   while (hit)
   {
@@ -373,15 +406,21 @@ static ssize_t kf_dev_write(struct file *file, const char *buf, size_t size, lof
     {
       //a valid cookie has been found
       //first copy it into kernel memory
-      if (copy_from_user(dev->cookiebuffer, pos, sz)) ; //TODO: error
-      printk("kfortune: kf_cookiedata_add: %d\n",
-          kf_cookiedata_add(&dev->data, dev->cookiebuffer, sz));    //and save it
+      if (copy_from_user(dev->cookiebuffer, pos, sz)) return -EFAULT;
+      if (kf_cookiedata_add(&dev->data, dev->cookiebuffer, sz))   //and then save it
+      {
+        //something went terribly wrong, lock this device down totally
+        dev->state |= (kf_DEV_ERRORLOCK | kf_DEV_2B_CLEARED);
+        printk("kfortune: tady\n");
+        return -EPERM;
+      }
     }
-    pos = hit+2;                                        //...so that zero length cookies are recognized as such
-    hit = kf_sndelim(pos, size);
+    pos = hit+2;                             //so that zero length cookies are recognized as such
+    hit = kf_sndelim(pos++, size);           // ( - delimiters may overlap)
   }
 
-  return size;
+  //kthxbai:
+  return size;                               //say that size bytes have been processed
 }
 
 static int kf_dev_release(struct inode *inode, struct file *file)
@@ -499,11 +538,9 @@ static int kf_proc_write(struct file *file, const char __user *buffer, unsigned 
   int dev_no = 0;
 
   //checks:
-  if (count >= sizeof(kbuf))
-    return -ENOSPC;
+  if (count >= sizeof(kbuf)) return -ENOSPC;
 
-  if (copy_from_user(kbuf, buffer, count))
-    return -EFAULT;
+  if (copy_from_user(kbuf, buffer, count)) return -EFAULT;
 
   //parsing:
   kbuf[count] = '\0';
