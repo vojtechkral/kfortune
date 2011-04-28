@@ -16,6 +16,8 @@
 #include <linux/proc_fs.h>
 
 
+//TODO: add (un)likely
+
 /*  ─────────────────────── Settings ────────────────────────  */
 
 //global:
@@ -79,14 +81,15 @@ typedef struct
   char filename[kf_MAX_DEV_NAME];
   struct file_operations fops;
   struct miscdevice dev;
-  char cookiebuffer[kf_MAX_COOKIESZ];
   kf_cookiedata data;
+  char cookiebuffer[kf_MAX_COOKIESZ];
+  size_t cookiebuffer_len;
 } kf_dev;
 
 /*  ──────────────────── Types - Methods ────────────────────  */
 
 //cookiedata:
-void kf_cookiedata_init(kf_cookiedata *data)
+static void kf_cookiedata_init(kf_cookiedata *data)
 {
   unsigned int i;
 
@@ -100,7 +103,7 @@ void kf_cookiedata_init(kf_cookiedata *data)
   data->data_tbl = NULL;
 }
 
-void kf_cookiedata_clear(kf_cookiedata *data)
+static void kf_cookiedata_clear(kf_cookiedata *data)
 {
   unsigned int i;
 
@@ -108,18 +111,24 @@ void kf_cookiedata_clear(kf_cookiedata *data)
 
   for (i = 0; i < data->numblocks_indx; i++)
   {
+    printk("kfortune: kfree() ← data->indx_tbl[%u]\n", i);
     if (data->indx_tbl[i]) kfree(data->indx_tbl[i]);
   }
-  for (i = 0; i < data->numblocks_data; i++)
+  if (data->data_tbl)
   {
-    if (data->data_tbl[i].block) vfree(data->data_tbl[i].block);
+    for (i = 0; i < data->numblocks_data; i++)
+    {
+      printk("kfortune: vfree() ← data->data_tbl[%u]\n", i);
+      if (data->data_tbl[i].block) vfree(data->data_tbl[i].block);
+    }
+    printk("kfortune: vfree() ← data->data_tbl\n");
+    vfree(data->data_tbl);
   }
-  vfree(data->data_tbl);
 
   kf_cookiedata_init(data);
 }
 
-char *kf_cookiedata_get(kf_cookiedata *data, unsigned int n)
+static char *kf_cookiedata_get(kf_cookiedata *data, unsigned int n)
 {
   unsigned int block_n;
   unsigned int offset;
@@ -131,10 +140,13 @@ char *kf_cookiedata_get(kf_cookiedata *data, unsigned int n)
   block_n = n / (kf_INDX_BLKSZ/sizeof(char*));
   offset = n - block_n;
 
-  return (*(data->indx_tbl[block_n]))[offset];
+  //printk("kfortune: block_n = %u, offset = %u", block_n, offset);
+
+  //return (*(data->indx_tbl[block_n]))[offset];
+  return NULL;
 }
 
-int kf_cookiedata_add(kf_cookiedata *data, const char* cookie, size_t size)
+static int kf_cookiedata_add(kf_cookiedata *data, const char* cookie, size_t size)
 {
   unsigned int i;
   kf_blockinfo *block = NULL;
@@ -164,6 +176,7 @@ int kf_cookiedata_add(kf_cookiedata *data, const char* cookie, size_t size)
   {
     //if there was none, lets allocate & init a new one:
     i = data->numblocks_data;         //(should already equal so, but one can never know...)
+    printk("kfortune: vmalloc() ← %u * %lu\n", (data->numblocks_data+1), sizeof(kf_blockinfo));
     newtbl = vmalloc((data->numblocks_data+1)*sizeof(kf_blockinfo));
       if (!newtbl) return -6;
     if (data->data_tbl)
@@ -174,6 +187,7 @@ int kf_cookiedata_add(kf_cookiedata *data, const char* cookie, size_t size)
     data->data_tbl = newtbl;
     block = data->data_tbl+i;
     block->size_used = 0;
+    printk("kfortune: vmalloc() ← %i\n", kf_DATA_BLKSZ);
     block->block = vmalloc(kf_DATA_BLKSZ);
       if (!block->block) return -6;    //kf_cookiedata_clear will take care
     data->numblocks_data++;
@@ -187,6 +201,7 @@ int kf_cookiedata_add(kf_cookiedata *data, const char* cookie, size_t size)
   {
     //this block is not allocated yet, let's do it:
     kf_indxblock *ptr;
+    printk("kfortune: kmalloc() ← %lu\n", sizeof(kf_indxblock));
     ptr = kmalloc(sizeof(kf_indxblock), GFP_KERNEL);
       if (!ptr) return -6;              //new datablock might have been allocated, but it don't
                                         //matter as data knows about that so it won't leak
@@ -197,7 +212,6 @@ int kf_cookiedata_add(kf_cookiedata *data, const char* cookie, size_t size)
   //copy data:
   memcpy(target, cookie, size);
   target[size] = '\0';              //NOTE: we don't care if cookie string contains '\0', we don't need to
-     printk("kfortune: cookie added: %s\n", target);
   size++;                           //because of '\0'
 
   //update metadata:
@@ -210,7 +224,7 @@ int kf_cookiedata_add(kf_cookiedata *data, const char* cookie, size_t size)
 }
 
 //kf_dev:
-void kf_dev_init(kf_dev *dev)
+static void kf_dev_init(kf_dev *dev)
 {
   if (!dev) return;
 
@@ -224,8 +238,15 @@ void kf_dev_init(kf_dev *dev)
   dev->dev.minor = MISC_DYNAMIC_MINOR;
   dev->dev.name = dev->filename;            //let them point to the same statically-allocated area
   dev->dev.fops = &dev->fops;
-  kf_cookiedata_clear(&dev->data);
+  dev->cookiebuffer_len = 0;
+  kf_cookiedata_init(&dev->data);
   memset(dev->cookiebuffer, 0, sizeof(dev->cookiebuffer));
+}
+
+static void kf_dev_clear(kf_dev *dev)
+{
+  if (!dev) return;
+  kf_cookiedata_clear(&dev->data);
 }
 
 /*  ─────────────────────── Global Vars ─────────────────────  */
@@ -236,7 +257,7 @@ static kf_dev kf_devs[kf_MAX_DEVS];
 
 
 
-
+//TODO: dmesg error reports
 
 /*  ──────────────────────── Random ─────────────────────────  */
 static unsigned int kf_random(unsigned int limit)
@@ -247,8 +268,11 @@ static unsigned int kf_random(unsigned int limit)
   unsigned int res = 0;
 
   if (!limit) return 0;
-  get_random_bytes(&res, sizeof(res));
+  //get_random_bytes(&res, sizeof(res));
+  res = 39;
   res %= limit;
+  //TODO: temporary!:
+  //printk("kfortune: kf_random() = %u\n", res);
   return res;
 }
 
@@ -310,17 +334,20 @@ static int kf_dev_open(struct inode *inode, struct file *file)
       return -EPERM;
     }
   }
+  printk("kfortune: open\n");
   return 0;
 }
 
 static ssize_t kf_dev_read(struct file *file, char *buf, size_t size, loff_t *ppos)
 {
+  char pk[21];
+
   kf_dev *dev;
   const char* cookie;
   size_t len;
 
-  if (*ppos) return 0;                 //If the position is non-zero, assume cookie has been read
-                                       //reading cookies from in the middle is not supported
+  if (*ppos) return 0;                //If the position is non-zero, assume cookie has been read
+                                      //reading cookies from in the middle is not supported
 
   //get the device:
   if (!(dev = kf_get_kfdev(file))) return -EINVAL;
@@ -349,14 +376,14 @@ static ssize_t kf_dev_read(struct file *file, char *buf, size_t size, loff_t *pp
   return len+1;
 }
 
-const char *kf_sndelim(const char *s, size_t size)
+const char *kf_sndelim(const char *s, const char* const end_addr)
 {
   /* This function searches for a cookie delimiter substring,
    * namely "\n%\n". Due to performance, it is implemented using
    * a finite state machine. The downside is that the delimiter
    * is thus hardcoded (but I personaly don't give a damn :p).
    */
-#define kf_SNDELIM_GET if(pos >= size) goto not_found; else c = s[pos++]
+#define kf_SNDELIM_GET if(s < end_addr) c = *(s++); else goto not_found
   size_t pos = 0;
   const char *res;
   char c;
@@ -381,9 +408,16 @@ const char *kf_sndelim(const char *s, size_t size)
 
 static ssize_t kf_dev_write(struct file *file, const char *buf, size_t size, loff_t *ppos)
 {
+  //TODO: locking (via var + mutex)
+
+  //TODO: TMP!:
+  static unsigned int tmp = 0;
+  char pk[20];
+
   kf_dev *dev;
   const char *pos = buf;
   const char *hit = NULL;
+  size_t sz = 0, resid = 0;
 
   if (!(dev = kf_get_kfdev(file))) return -EINVAL;
 
@@ -395,31 +429,54 @@ static ssize_t kf_dev_write(struct file *file, const char *buf, size_t size, lof
   }
   if (dev->state & kf_DEV_ERRORLOCK) return -EPERM;
 
-  //TODO: checks, residual buffer
-
   //parsing:
-  hit = kf_sndelim(pos, size);
+  hit = kf_sndelim(pos, buf+size);
+//  if (dev->cookiebuffer_len && hit)      //residual buffer, because some cookies might end up being split among device write calls
+//  {
+//    sz = hit-pos;
+//    if ((sz+dev->cookiebuffer_len) <= kf_MAX_COOKIESZ)
+//    {
+//      if (copy_from_user(dev->cookiebuffer+dev->cookiebuffer_len, pos, sz)) return -EFAULT;
+//      sz += dev->cookiebuffer_len;
+//      dev->cookiebuffer_len = 0;
+//      goto insert;
+//    }
+//  }
   while (hit)
   {
-    size_t sz = hit-pos;
-    if (sz && (sz <= kf_MAX_COOKIESZ))
+    sz = hit-pos;
+    if ((sz) && (sz <= kf_MAX_COOKIESZ) && (tmp < 900))
     {
       //a valid cookie has been found
       //first copy it into kernel memory
       if (copy_from_user(dev->cookiebuffer, pos, sz)) return -EFAULT;
+      insert:
       if (kf_cookiedata_add(&dev->data, dev->cookiebuffer, sz))   //and then save it
       {
         //something went terribly wrong, lock this device down totally
         dev->state |= (kf_DEV_ERRORLOCK | kf_DEV_2B_CLEARED);
-        printk("kfortune: tady\n");
+        printk("kfortune: chyba\n");   //TODO
         return -EPERM;
       }
+      tmp++;
     }
     pos = hit+2;                             //so that zero length cookies are recognized as such
-    hit = kf_sndelim(pos++, size);           // ( - delimiters may overlap)
+    hit = kf_sndelim(pos++, buf+size);           // ( - delimiters may overlap)
+  }
+  //TODO: TMP!:
+  //strncpy(pk, buf, 20); pk[20] = '\0';
+  printk("kfortune: hits: %u, size = %lu, ppos = %ld\n", tmp, size, *ppos);
+
+  //fill residual buffer if necessary:
+  resid = size-(pos-buf);
+  if (resid && (resid <= kf_MAX_COOKIESZ))
+  {
+    if (copy_from_user(dev->cookiebuffer, pos, resid)) return -EFAULT;
+    dev->cookiebuffer_len = resid;
   }
 
   //kthxbai:
+  *ppos += size;
   return size;                               //say that size bytes have been processed
 }
 
@@ -435,6 +492,9 @@ static int kf_dev_release(struct inode *inode, struct file *file)
     dev->state &= ~(kf_DEV_WRITELOCK | kf_DEV_2B_CLEARED);
   }
 
+  //TODO: residual buffer?
+
+  printk("kfortune: release\n");
   return 0;
 }
 
@@ -451,6 +511,7 @@ static void kf_enable_dev(kf_dev *dev, int enable)
     }
     else
     {
+      kf_dev_clear(dev);
       kf_dev_init(dev);
     }
   }
@@ -589,7 +650,7 @@ static int __init kfortune_init(void)
     kf_procfile->write_proc = kf_proc_write;
   }
 
-  //kthxbai
+  //It's ready
   printk(KERN_INFO "kfortune: loaded\n");
   return 0;
 }
