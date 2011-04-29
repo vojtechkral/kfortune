@@ -1,2 +1,0 @@
-KERNEL=="ka", SYMLINK+="ky ku", MODE="0444"
-KERNEL=="finger", SYMLINK+="prst", MODE="0444"
