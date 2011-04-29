@@ -1,6 +1,9 @@
 /*
+ * kfortune.c
+ *  - kernel-space implementation of the popular fortune program
  *
- * TODO: header
+ * License: GNU GPLv3
+ * Vojtech 'kralyk' Kral (copyleft) 2011
  *
  */
 
@@ -16,8 +19,6 @@
 #include <asm/uaccess.h>
 #include <linux/proc_fs.h>
 
-
-//TODO: add (un)likely
 
 /*  ─────────────────────── Settings ────────────────────────  */
 
@@ -46,11 +47,6 @@
 #define kf_DATA_BLKNUM     (kf_MAX_COOKIEDATA/kf_DATA_BLKSZ)
 #define kf_INDX_BLKSZ      4096
 #define kf_INDX_BLKNUM     4
-
-/*  ─────────────────── Convenience macros ──────────────────  */
-
-#define kf_STR_EXPAND(tok) #tok
-#define kf_STR(tok) kf_STR_EXPAND(tok)
 
 /*  ────────────────── Forward declaration ──────────────────  */
 
@@ -124,7 +120,6 @@ static void kf_cookiedata_clear(kf_cookiedata *data)
   {
     for (i = 0; i < data->numblocks_data; i++)
     {
-      printk("kfortune: vfree() ← data->data_tbl[%u]\n", i);
       if (likely(data->data_tbl[i].block))
       {
         vfree(data->data_tbl[i].block);
@@ -173,7 +168,7 @@ static int kf_cookiedata_add(kf_cookiedata *data, const char* cookie, size_t siz
   }
 
   //if there was no free space, allocate new block:
-  if (!block)
+  if (unlikely(!block))
   {
     if (data->numblocks_data >= kf_DATA_BLKNUM) return -5;          //no new block can be allocated
     data->data_tbl = krealloc(data->data_tbl, (data->numblocks_data += 1)*kf_DATA_BLKSZ, GFP_KERNEL);
@@ -188,7 +183,7 @@ static int kf_cookiedata_add(kf_cookiedata *data, const char* cookie, size_t siz
   target = (block->block+block->size_used);
 
   //update index:
-  if (data->numcookies*sizeof(void*) >= data->numblocks_indx*kf_INDX_BLKSZ)
+  if (unlikely(data->numcookies*sizeof(void*) >= data->numblocks_indx*kf_INDX_BLKSZ))
   {
     //new index block needed
     data->indx_tbl = krealloc(data->indx_tbl, (data->numblocks_indx += 1)*kf_INDX_BLKSZ, GFP_KERNEL);
@@ -243,7 +238,6 @@ static DEFINE_MUTEX(kf_mtx_wcall);
 
 
 
-//TODO: dmesg error reports
 
 /*  ──────────────────────── Random ─────────────────────────  */
 static unsigned int kf_random(unsigned int limit)
@@ -296,7 +290,11 @@ static int kf_dev_open(struct inode *inode, struct file *file)
    */
 
   kf_dev *dev;
-  if (unlikely(!(dev = kf_get_kfdev(file)))) return -EINVAL;
+  if (unlikely(!(dev = kf_get_kfdev(file))))
+  {
+    printk(KERN_WARNING "kfortune: kf_dev_open(): unknown device\n");
+    return -EINVAL;
+  }
 
   //state checks:
   if (dev->state & kf_DEV_ERRORLOCK) return -EPERM;
@@ -317,7 +315,6 @@ static int kf_dev_open(struct inode *inode, struct file *file)
       return -EPERM;
     }
   }
-  printk("kfortune: open\n");
   return 0;
 }
 
@@ -331,7 +328,11 @@ static ssize_t kf_dev_read(struct file *file, char *buf, size_t size, loff_t *pp
                                       //reading cookies from in the middle is not supported
 
   //get the device:
-  if (unlikely(!(dev = kf_get_kfdev(file)))) return -EINVAL;
+  if (unlikely(!(dev = kf_get_kfdev(file))))
+  {
+    printk(KERN_WARNING "kfortune: kf_dev_read(): unknown device\n");
+    return -EINVAL;
+  }
 
   //check errorlock:
   if (dev->state & kf_DEV_ERRORLOCK) return -EPERM;
@@ -395,7 +396,11 @@ static ssize_t kf_dev_write(struct file *file, const char *buf, size_t size, lof
   const char *hit = NULL;
   size_t sz = 0, resid = 0;
 
-  if (unlikely(!(dev = kf_get_kfdev(file)))) return -EINVAL;
+  if (unlikely(!(dev = kf_get_kfdev(file))))
+  {
+    printk(KERN_WARNING "kfortune: kf_dev_write(): unknown device\n");
+    return -EINVAL;
+  }
 
   //mutual exclusion:
   mutex_lock(&kf_mtx_wcall);                                //so that no write call could ever kick in while
@@ -442,6 +447,7 @@ static ssize_t kf_dev_write(struct file *file, const char *buf, size_t size, lof
       {
         //something went terribly wrong, lock this device down totally
         dev->state |= (kf_DEV_ERRORLOCK | kf_DEV_2B_CLEARED);
+        printk(KERN_ERR "kfortune: could not get memory, locking device '/dev/%s'\n", dev->filename);
         return -EPERM;
       }
     }
@@ -466,7 +472,11 @@ static ssize_t kf_dev_write(struct file *file, const char *buf, size_t size, lof
 static int kf_dev_release(struct inode *inode, struct file *file)
 {
   kf_dev *dev;
-  if (unlikely(!(dev = kf_get_kfdev(file)))) return -EINVAL;
+  if (unlikely(!(dev = kf_get_kfdev(file))))
+  {
+    printk(KERN_WARNING "kfortune: kf_dev_release(): unknown device\n");
+    return -EINVAL;
+  }
 
   if ((file->f_mode & FMODE_WRITE) && (dev->state & kf_DEV_WOPENLOCK))
   {
@@ -476,7 +486,6 @@ static int kf_dev_release(struct inode *inode, struct file *file)
   }
   dev->cookiebuffer_len = 0;
 
-  printk("kfortune: release\n");
   return 0;
 }
 
@@ -489,7 +498,7 @@ static void kf_enable_dev(kf_dev *dev, int enable)
     //deregister
     if (misc_deregister(&dev->dev))
     {
-      printk(KERN_ERR "kfortune: Error: Unable to deregister device '%s'\n", dev->filename);
+      printk(KERN_ERR "kfortune: Error: Unable to deregister device '/dev/%s'\n", dev->filename);
       return;
     }
     else
@@ -503,7 +512,7 @@ static void kf_enable_dev(kf_dev *dev, int enable)
     //register new device
     if (misc_register(&dev->dev))
     {
-      printk(KERN_ERR "kfortune: Error: Unable to register device '%s'\n", dev->filename);
+      printk(KERN_ERR "kfortune: Error: Unable to register device '/dev/%s'\n", dev->filename);
       return;
     }
     else
@@ -515,8 +524,6 @@ static void kf_enable_dev(kf_dev *dev, int enable)
 
 
 /*  ───────────────────── Procfs file ───────────────────────  */
-
-//TODO: add open() (because of blank write access)
 
 static int kf_check_dev_name(const char *fn)
 {
@@ -669,7 +676,7 @@ static void __exit kfortune_exit(void)
   remove_proc_entry(kf_PROCFS_NAME, NULL);  //returns void, no checking, let's just hope it went ok...
 
   //kthxbai
-  printk(KERN_INFO "kfortune: unloaded\n-------------------------------\n");
+  printk(KERN_INFO "kfortune: unloaded\n");
 }
 
 /*  ────────────────────── Module macros ────────────────────  */
