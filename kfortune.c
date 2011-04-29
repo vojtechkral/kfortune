@@ -10,6 +10,7 @@
 #include <linux/init.h>
 #include <linux/miscdevice.h>
 #include <linux/module.h>
+#include <linux/mutex.h>
 #include <linux/random.h>
 #include <linux/slab.h>
 #include <asm/uaccess.h>
@@ -20,6 +21,10 @@
 
 /*  ─────────────────────── Settings ────────────────────────  */
 
+//ver:
+#define kf_VER_MAJOR      "0"
+#define kf_VER_MINOR      "9rc"
+
 //global:
 #define kf_MAX_DEV_NAME   16                // _INCLUDING_ the null char
 #define kf_MIN_DEV_NAME   2                 // _WITHOUT_ the null char
@@ -29,7 +34,10 @@
 //procfs report:
 #define kf_REPORT_LINE_SZ  (kf_MAX_DEV_NAME+112)
 #define kf_REPORT_HEADER   "kfortune status:\n"
-#define kf_REPORT_FOOTER   "\n--footer\n"           //TODO!
+#define kf_REPORT_FOOTER   "\n\nkfortune "kf_VER_MAJOR"."kf_VER_MINOR"\n"\
+                           "By Vojtech 'kralyk' Kral (copyleft) 2011\n"\
+                           "Distributed under the GNU GPLv3 license.\n"\
+                           "For usage information an documentation see 'man kfortune'\n"
 
 //memory:
 #define kf_MAX_COOKIESZ    (4*1024)         //max size of one cookie in bytes
@@ -75,9 +83,10 @@ typedef struct
 typedef enum
 {
   kf_DEV_ACTIVE     = (1 << 0),
-  kf_DEV_WRITELOCK  = (1 << 1),
-  kf_DEV_2B_CLEARED = (1 << 2),
-  kf_DEV_ERRORLOCK  = (1 << 3),
+  kf_DEV_WOPENLOCK  = (1 << 1),
+  kf_DEV_WCALLLOCK  = (1 << 2),
+  kf_DEV_2B_CLEARED = (1 << 3),
+  kf_DEV_ERRORLOCK  = (1 << 4),
 } kf_dev_state;
 
 typedef struct
@@ -229,6 +238,7 @@ static void kf_dev_clear(kf_dev *dev)
 
 static struct proc_dir_entry *kf_procfile;
 static kf_dev kf_devs[kf_MAX_DEVS];
+static DEFINE_MUTEX(kf_mtx_wcall);
 
 
 
@@ -292,9 +302,9 @@ static int kf_dev_open(struct inode *inode, struct file *file)
   if (dev->state & kf_DEV_ERRORLOCK) return -EPERM;
   if (file->f_mode & FMODE_WRITE)
   {
-    if (!(dev->state & kf_DEV_WRITELOCK))
+    if (!(dev->state & kf_DEV_WOPENLOCK))
     {
-      dev->state |= (kf_DEV_WRITELOCK | kf_DEV_2B_CLEARED);
+      dev->state |= (kf_DEV_WOPENLOCK | kf_DEV_2B_CLEARED);
       /* Lock this down: there may only be one write access at a time.
        * NOTE: Race condition won't occur here, because
        * miscdevice driver has a mutex locked during whole fops.open().
@@ -313,8 +323,6 @@ static int kf_dev_open(struct inode *inode, struct file *file)
 
 static ssize_t kf_dev_read(struct file *file, char *buf, size_t size, loff_t *ppos)
 {
-  char pk[21];
-
   kf_dev *dev;
   const char* cookie;
   size_t len;
@@ -381,17 +389,22 @@ const char *kf_sndelim(const char *s, const char* const end_addr)
 
 static ssize_t kf_dev_write(struct file *file, const char *buf, size_t size, loff_t *ppos)
 {
-  //TODO: locking (via var + mutex)
-
-  //TODO: TMP!:
-  static unsigned int tmp = 0;
-
   kf_dev *dev;
+  int mutex_exit = 0;
   const char *pos = buf;
   const char *hit = NULL;
   size_t sz = 0, resid = 0;
 
   if (unlikely(!(dev = kf_get_kfdev(file)))) return -EINVAL;
+
+  //mutual exclusion:
+  mutex_lock(&kf_mtx_wcall);                                //so that no write call could ever kick in while
+    if (unlikely(dev->state & kf_DEV_WCALLLOCK))            //another write call is in progress for the same device
+      mutex_exit = 1;
+    else
+      dev->state |= kf_DEV_WCALLLOCK;
+  mutex_unlock(&kf_mtx_wcall);
+  if (mutex_exit) return 0;
 
   //clear data if the clear flag is set:
   if (dev->state & kf_DEV_2B_CLEARED)
@@ -419,7 +432,7 @@ static ssize_t kf_dev_write(struct file *file, const char *buf, size_t size, lof
   while (hit)
   {
     sz = hit-pos;
-    if ((sz) && (sz <= kf_MAX_COOKIESZ) /*&& (tmp < 900)*/)
+    if ((sz) && (sz <= kf_MAX_COOKIESZ))
     {
       //a valid cookie has been found
       //first copy it into kernel memory
@@ -431,7 +444,6 @@ static ssize_t kf_dev_write(struct file *file, const char *buf, size_t size, lof
         dev->state |= (kf_DEV_ERRORLOCK | kf_DEV_2B_CLEARED);
         return -EPERM;
       }
-      tmp++;
     }
     pos = hit+2;                              //so that zero length cookies are recognized as such
     hit = kf_sndelim(pos++, buf+size);        //  ( - delimiters may overlap)
@@ -445,12 +457,9 @@ static ssize_t kf_dev_write(struct file *file, const char *buf, size_t size, lof
     dev->cookiebuffer_len = resid;
   }
 
-  //TODO: TMP!:
-  //strncpy(pk, buf, 20); pk[20] = '\0';
-  printk("kfortune: hits: %u, size = %lu, resid = %lu, ppos = %ld\n", tmp, size, resid, *ppos);
-
   //kthxbai:
   *ppos += size;
+  dev->state &= ~kf_DEV_WCALLLOCK;           //unlock write call
   return size;                               //say that size bytes have been processed
 }
 
@@ -459,11 +468,11 @@ static int kf_dev_release(struct inode *inode, struct file *file)
   kf_dev *dev;
   if (unlikely(!(dev = kf_get_kfdev(file)))) return -EINVAL;
 
-  if ((file->f_mode & FMODE_WRITE) && (dev->state & kf_DEV_WRITELOCK))
+  if ((file->f_mode & FMODE_WRITE) && (dev->state & kf_DEV_WOPENLOCK))
   {
     //clear data if the clear flag is set
     if (dev->state & kf_DEV_2B_CLEARED) kf_cookiedata_clear(&dev->data);
-    dev->state &= ~(kf_DEV_WRITELOCK | kf_DEV_2B_CLEARED);
+    dev->state &= ~(kf_DEV_WOPENLOCK | kf_DEV_2B_CLEARED);
   }
   dev->cookiebuffer_len = 0;
 
@@ -561,6 +570,7 @@ static int kf_proc_read(char *page, char **start, off_t off, int count, int *eof
       len = sprintf(buffer+written, " #%d:     (inactive)\n", i);
       written += len;
     }
+    //sorry, I just don't like the \t (tab) character. Regular spaces ftw! :p
   }
 
   //write footer
@@ -573,8 +583,7 @@ static int kf_proc_read(char *page, char **start, off_t off, int count, int *eof
   //output data:
   buffer[written] = '\0';
   *eof = 1;   //this would be all
-  //if (copy_to_user(page, buffer, written)) return -EINVAL;
-  memcpy(page, buffer, written);
+  memcpy(page, buffer, written);                 //not using copy_to_user() because page is actually in kernel space
 
   //kthxbai:
   return written;
@@ -671,4 +680,4 @@ module_exit(kfortune_exit);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Vojtech 'kralyk' Kral");
 MODULE_DESCRIPTION("kfortune: kernel-space remake of the popular fortune program");
-MODULE_VERSION("0");
+MODULE_VERSION(kf_VER_MAJOR"."kf_VER_MINOR);
