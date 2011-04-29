@@ -558,8 +558,8 @@ static int kf_proc_read(char *page, char **start, off_t off, int count, int *eof
   memset(buffer, (int)' ', sizeof(buffer));
 
   //write header
-  memcpy(buffer, header, sizeof(header));
-  written += sizeof(header);
+  memcpy(buffer, header, sizeof(header)-1);                    //-1 because we don't want the final '\0' in there...
+  written += sizeof(header)-1;
 
   //write kfortune status lines:
   for (i = 0; i < kf_MAX_DEVS; i++)
@@ -570,7 +570,8 @@ static int kf_proc_read(char *page, char **start, off_t off, int count, int *eof
       len = ((len = sprintf(buffer+written, "%s", kf_devs[i].filename)) >= 0 ? len : 0);
       buffer[written+len] = ' ';
       written += kf_MAX_DEV_NAME;
-      written += ((len = sprintf(buffer+written, " %4u cookies\n", kf_devs[i].data.numcookies)) >= 0 ? len : 0);
+      written += ((len = sprintf(buffer+written, " %4u cookies in %lu kB\n",
+                                 kf_devs[i].data.numcookies, kf_devs[i].data.size_used/1024)) >= 0 ? len : 0);
     }
     else
     {
@@ -581,8 +582,8 @@ static int kf_proc_read(char *page, char **start, off_t off, int count, int *eof
   }
 
   //write footer
-  memcpy(buffer+written, footer, sizeof(footer));
-  written += sizeof(footer);
+  memcpy(buffer+written, footer, sizeof(footer)-1);            //-1 because we don't want the final '\0' in there...
+  written += sizeof(footer)-1;
 
   //check size:
   if (written > count) return -EINVAL;
