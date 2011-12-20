@@ -23,8 +23,8 @@
 /*  ─────────────────────── Settings ────────────────────────  */
 
 //ver:
-#define kf_VER_MAJOR      "0"
-#define kf_VER_MINOR      "9rc"
+#define kf_VER_MAJOR      "1"
+#define kf_VER_MINOR      "0"
 
 //global:
 #define kf_MAX_DEV_NAME   16                // _INCLUDING_ the null char
@@ -240,16 +240,16 @@ static DEFINE_MUTEX(kf_mtx_wcall);
 
 
 /*  ──────────────────────── Random ─────────────────────────  */
-static unsigned int kf_random(unsigned int limit)
+static unsigned int kf_random(unsigned int cap)
 {
   /* This function generates a random number.
-   * The rsult is always at least one less than limit
+   * The rsult is always at least one less than cap
    */
   unsigned int res = 0;
 
-  if (unlikely(!limit)) return 0;
+  if (unlikely(!cap)) return 0;
   get_random_bytes(&res, sizeof(res));
-  res %= limit;
+  res %= cap;
   return res;
 }
 
@@ -566,7 +566,7 @@ static int kf_proc_read(char *page, char **start, off_t off, int count, int *eof
   {
     if (kf_devs[i].state & kf_DEV_ACTIVE)
     {
-      written += ((len = sprintf(buffer+written, " #%d:    /dev/", i)) >= 0 ? len : 0);
+      written += ((len = sprintf(buffer+written, "  #%d:    /dev/", i)) >= 0 ? len : 0);
       len = ((len = sprintf(buffer+written, "%s", kf_devs[i].filename)) >= 0 ? len : 0);
       buffer[written+len] = ' ';
       written += kf_MAX_DEV_NAME;
@@ -575,7 +575,7 @@ static int kf_proc_read(char *page, char **start, off_t off, int count, int *eof
     }
     else
     {
-      len = sprintf(buffer+written, " #%d:     (inactive)\n", i);
+      len = sprintf(buffer+written, "  #%d:     (inactive)\n", i);
       written += len;
     }
     //sorry, I just don't like the \t (tab) character. Regular spaces ftw! :p
