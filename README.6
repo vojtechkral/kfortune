@@ -1,0 +1,59 @@
+.\" generated with Ronn/v0.7.3
+.\" http://github.com/rtomayko/ronn/tree/0.7.3
+.
+.TH "KFORTUNE" "6" "December 2011" "" ""
+.
+.SH "NAME"
+\fBkfortune\fR \- kernel\-space remake of the popular fortune program
+.
+.SH "DESCRIPTION"
+\fBkfortune\fR is a configurable linux kernel module that works in a similar way as its user\-space counterpart \fBfortune\fR\.
+.
+.P
+The fortune cookies are accessible by means of a character device\. kfortune devices provide standard reading operations for the user\-space and output randomly picked cookie when read from\.
+.
+.SH "USAGE"
+The names of the devices as well as their contents are configured from user\-space using a procfs file \- \fB/proc/kfortune\fR\. This file also provides information about kfortune\'s status when read\.
+.
+.P
+Up to 8 devices can be created\. This is done by writing a list of names to /proc/kfortune\. The names are filenames of devices (only the basename \- \fIwithout\fR /dev/)\. A valid name must be at least \fB2\fR and at most \fB15\fR characters long, valid characters are \fB[A\-Za\-z0\-9_]\fR\. In the list names are sperarated by whistespace characters (such as space or newline)\. Any invalid string is ignored\.
+.
+.P
+It may be needed to configure device access permissions using \fBudev(7)\fR\.
+.
+.P
+After creating the device(s), a cookie database is written to each device file\. Since kfortune understands the same text format that is used by fortune(6), this is done by simply writing the file to the device\. See \fBEXAMPLES\fR\. The strfile (\.dat) files that usually acompany cookie database files are not utilized by kfortune in any way\.
+.
+.SH "LIMITATIONS"
+A limitation of current implementation is that all kfortune devices are reset with each write to /proc/kfortune\. Therefore, all devices that the user intends to use should be set in advance and just once\.
+.
+.P
+There is no limit on the number of cookies per device, however, each cookie must be no more than \fB4096 bytes\fR (not characters) in size and the total amount of memory occupied by all cookies across all kfortune devices must not be greater than \fB1MB\fR\. A writing operation that would break these limitations will be rejected by the driver\.
+.
+.SH "EXAMPLES"
+.
+.nf
+
+# echo \'example example2\' > /proc/kfortune
+# cat /usr/share/fortune/linux > /dev/example
+# cat /proc/kfortune
+kfortune status:
+  #0:    /dev/example           393 cookies in 65 kB
+  #1:    /dev/example2            0 cookies in 0 kB
+# cat /dev/example
+Vini, vidi, Linux!
+        \-\- Unknown source
+.
+.fi
+.
+.SH "SEE ALSO"
+fortune(6)
+.
+.SH "BUGS"
+Report bugs to \fIhttps://github\.com/kralyk/kfortune/issues\fR
+.
+.SH "COPYRIGHT"
+Copyright (c) 2011 Vojtech \'kralyk\' Kral
+.
+.P
+Distributed under the terms of the GNU General Public License version 3 or later\.

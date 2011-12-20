@@ -3,7 +3,7 @@
  *  - kernel-space implementation of the popular fortune program
  *
  * License: GNU GPLv3
- * Vojtech 'kralyk' Kral (copyleft) 2011
+ * Vojtech 'kralyk' Kral (c) 2011
  *
  */
 
@@ -36,7 +36,7 @@
 #define kf_REPORT_LINE_SZ  (kf_MAX_DEV_NAME+112)
 #define kf_REPORT_HEADER   "kfortune status:\n"
 #define kf_REPORT_FOOTER   "\n\nkfortune "kf_VER_MAJOR"."kf_VER_MINOR"\n"\
-                           "By Vojtech 'kralyk' Kral (copyleft) 2011\n"\
+                           "By Vojtech 'kralyk' Kral (c) 2011\n"\
                            "Distributed under the GNU GPLv3 license.\n"\
                            "For usage information an documentation see 'man kfortune'\n"
 

@@ -1,0 +1,4 @@
+#!/bin/bash
+
+cat README.ronn | sed '1s/.*/kfortune/;  s/##/###/g; ' > README.md
+

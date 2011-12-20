@@ -1,0 +1,50 @@
+kfortune(6) -- kernel-space remake of the popular fortune program
+=============================================
+
+## DESCRIPTION
+
+**kfortune** is a configurable linux kernel module that works in a similar way as its user-space counterpart **fortune**.
+
+The fortune cookies are accessible by means of a character device. kfortune devices provide standard reading operations for the user-space and output randomly picked cookie when read from.
+
+## USAGE
+
+The names of the devices as well as their contents are configured from user-space using a procfs file - **/proc/kfortune**. This file also provides information about kfortune's status when read.
+
+Up to 8 devices can be created. This is done by writing a list of names to /proc/kfortune. The names are filenames of devices (only the basename - *without* /dev/). A valid name must be at least **2** and at most **15** characters long, valid characters are **[A-Za-z0-9_]**. In the list names are sperarated by whistespace characters (such as space or newline). Any invalid string is ignored.
+
+It may be needed to configure device access permissions using **udev(7)**.
+
+After creating the device(s), a cookie database is written to each device file. Since kfortune understands the same text format that is used by fortune(6), this is done by simply writing the file to the device. See **EXAMPLES**. The strfile (.dat) files that usually acompany cookie database files are not utilized by kfortune in any way.
+
+## LIMITATIONS
+A limitation of current implementation is that all kfortune devices are reset with each write to /proc/kfortune. Therefore, all devices that the user intends to use should be set in advance and just once.
+
+There is no limit on the number of cookies per device, however, each cookie must be no more than **4096 bytes** (not characters) in size and the total amount of memory occupied by all cookies across all kfortune devices must not be greater than **1MB**. A writing operation that would break these limitations will be rejected by the driver.
+
+## EXAMPLES
+
+    # echo 'example example2' > /proc/kfortune
+    # cat /usr/share/fortune/linux > /dev/example
+    # cat /proc/kfortune
+    kfortune status:
+      #0:    /dev/example           393 cookies in 65 kB
+      #1:    /dev/example2            0 cookies in 0 kB
+    # cat /dev/example
+    Vini, vidi, Linux!
+            -- Unknown source
+
+## SEE ALSO
+
+fortune(6)
+
+## BUGS
+
+Report bugs to [https://github.com/kralyk/kfortune/issues](https://github.com/kralyk/kfortune/issues)
+
+## COPYRIGHT
+
+Copyright (c) 2011 Vojtech 'kralyk' Kral
+
+Distributed under the terms of the GNU General Public License version 3 or later.
+
