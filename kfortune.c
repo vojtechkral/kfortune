@@ -491,33 +491,33 @@ static int kf_dev_release(struct inode *inode, struct file *file)
 
 static void kf_enable_dev(kf_dev *dev, int enable)
 {
+  int errno = 0;
   if (unlikely(!dev)) return;
-  if ((!(dev->state & kf_DEV_ACTIVE)) && (!enable)) return;  //no work needed
-  if (dev->state & kf_DEV_ACTIVE)
+  if (!(dev->state & kf_DEV_ACTIVE) == !enable) return;  //no work needed
+  if (enable)
+  {
+    //register new device
+    if (errno = misc_register(&dev->dev))
+    {
+      printk(KERN_ERR "kfortune: Error: Unable to register device '/dev/%s' (errno = %d)\n", dev->filename, errno);
+      return;
+    }
+    else
+    {
+      dev->state |= kf_DEV_ACTIVE;
+    }
+  } else
   {
     //deregister
-    if (misc_deregister(&dev->dev))
+    if (errno = misc_deregister(&dev->dev))
     {
-      printk(KERN_ERR "kfortune: Error: Unable to deregister device '/dev/%s'\n", dev->filename);
+      printk(KERN_ERR "kfortune: Error: Unable to deregister device '/dev/%s' (errno = %d)\n", dev->filename, errno);
       return;
     }
     else
     {
       kf_dev_clear(dev);
       kf_dev_init(dev);
-    }
-  }
-  if (enable)
-  {
-    //register new device
-    if (misc_register(&dev->dev))
-    {
-      printk(KERN_ERR "kfortune: Error: Unable to register device '/dev/%s'\n", dev->filename);
-      return;
-    }
-    else
-    {
-      dev->state |= kf_DEV_ACTIVE;
     }
   }
 }
@@ -620,6 +620,7 @@ static int kf_proc_write(struct file *file, const char __user *buffer, unsigned 
     if ((len >= kf_MIN_DEV_NAME) && (len < kf_MAX_DEV_NAME))
       if (kf_check_dev_name(match))
       {
+        kf_enable_dev(&kf_devs[dev_no], 0);
         strcpy(kf_devs[dev_no].filename, match);    //since we already checked the length, it's ok to use strcpy (I hope)
         kf_enable_dev(&kf_devs[dev_no], 1);
         dev_no++;
