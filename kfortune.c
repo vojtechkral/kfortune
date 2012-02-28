@@ -243,7 +243,7 @@ static DEFINE_MUTEX(kf_mtx_wcall);
 static unsigned int kf_random(unsigned int cap)
 {
   /* This function generates a random number.
-   * The rsult is always at least one less than cap
+   * The result is always at least one less than cap
    */
   unsigned int res = 0;
 
