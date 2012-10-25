@@ -38,7 +38,7 @@
 #define kf_REPORT_FOOTER   "\n\nkfortune "kf_VER_MAJOR"."kf_VER_MINOR"\n"\
                            "By Vojtech 'kralyk' Kral (c) 2011\n"\
                            "Distributed under the GNU GPLv3 license.\n"\
-                           "For usage information an documentation see 'man kfortune'\n"
+                           "For usage information and documentation see 'man kfortune'\n"
 
 //memory:
 #define kf_MAX_COOKIESZ    (4*1024)         //max size of one cookie in bytes
