@@ -52,9 +52,11 @@
 
 static size_t kf_overall_size(void);
 static int kf_dev_open(struct inode *, struct file *);
-static ssize_t kf_dev_read(struct file *, char *, size_t, loff_t *);
-static ssize_t kf_dev_write(struct file *, const char *, size_t, loff_t *);
+static ssize_t kf_dev_read(struct file *, char __user *, size_t, loff_t *);
+static ssize_t kf_dev_write(struct file *, const char __user *, size_t, loff_t *);
 static int kf_dev_release(struct inode *, struct file *);
+static ssize_t kf_proc_read(struct file *, char __user *, size_t, loff_t *);
+static ssize_t kf_proc_write(struct file *, const char __user *, size_t, loff_t *);
 
 /*  ───────────────────────── Types ─────────────────────────  */
 
@@ -235,7 +237,12 @@ static struct proc_dir_entry *kf_procfile;
 static kf_dev kf_devs[kf_MAX_DEVS];
 static DEFINE_MUTEX(kf_mtx_wcall);
 
-
+struct file_operations kf_procfile_fops =
+{
+  .owner = THIS_MODULE,
+  .read = kf_proc_read,
+  .write = kf_proc_write
+};
 
 
 
@@ -318,7 +325,7 @@ static int kf_dev_open(struct inode *inode, struct file *file)
   return 0;
 }
 
-static ssize_t kf_dev_read(struct file *file, char *buf, size_t size, loff_t *ppos)
+static ssize_t kf_dev_read(struct file *file, char __user *buf, size_t size, loff_t *ppos)
 {
   kf_dev *dev;
   const char* cookie;
@@ -388,7 +395,7 @@ const char *kf_sndelim(const char *s, const char* const end_addr)
     return NULL;
 }
 
-static ssize_t kf_dev_write(struct file *file, const char *buf, size_t size, loff_t *ppos)
+static ssize_t kf_dev_write(struct file *file, const char __user *buf, size_t size, loff_t *ppos)
 {
   kf_dev *dev;
   int mutex_exit = 0;
@@ -542,7 +549,7 @@ static int kf_check_dev_name(const char *fn)
   return 1;         //aka true
 }
 
-static int kf_proc_read(char *page, char **start, off_t off, int count, int *eof, void *data)
+static ssize_t kf_proc_read(struct file *file, char __user *userbuf, size_t size, loff_t *ppos)
 {
   const char header[] = kf_REPORT_HEADER;
   const char footer[] = kf_REPORT_FOOTER;
@@ -552,7 +559,7 @@ static int kf_proc_read(char *page, char **start, off_t off, int count, int *eof
   int len = 0;
   int i;
 
-  if (off) return 0;               //no reading from the middle of the file
+  if (*ppos) return 0;             //no reading from the middle of the file
 
   //init buffer:
   memset(buffer, (int)' ', sizeof(buffer));
@@ -578,7 +585,6 @@ static int kf_proc_read(char *page, char **start, off_t off, int count, int *eof
       len = sprintf(buffer+written, "  #%d:     (inactive)\n", i);
       written += len;
     }
-    //sorry, I just don't like the \t (tab) character. Regular spaces ftw! :p
   }
 
   //write footer
@@ -586,32 +592,31 @@ static int kf_proc_read(char *page, char **start, off_t off, int count, int *eof
   written += sizeof(footer)-1;
 
   //check size:
-  if (written > count) return -EINVAL;
+  if (written > size) return -EINVAL;
 
   //output data:
-  buffer[written] = '\0';
-  *eof = 1;   //this would be all
-  memcpy(page, buffer, written);                 //not using copy_to_user() because page is actually in kernel space
+  if (copy_to_user(userbuf, buffer, written)) return -EINVAL;
 
   //kthxbai:
+  *ppos = written;
   return written;
 }
 
-static int kf_proc_write(struct file *file, const char __user *buffer, unsigned long count, void *data)
+static ssize_t kf_proc_write(struct file *file, const char __user *userbuf, size_t size, loff_t *ppos)
 {
-  char kbuf[ kf_MAX_DEV_NAME*5*kf_MAX_DEVS ];    //enough bytes
+  char buffer[ kf_MAX_DEV_NAME*5*kf_MAX_DEVS ];    //enough bytes
   int i;
-  char *tmp = kbuf;
+  char *tmp = buffer;
   size_t len;
   int dev_no = 0;
 
   //checks:
-  if (unlikely(count >= sizeof(kbuf))) return -ENOSPC;
-
-  if (copy_from_user(kbuf, buffer, count)) return -EFAULT;
+  if (*ppos) return 0;
+  if (unlikely(size >= sizeof(buffer))) return -ENOSPC;
+  if (copy_from_user(buffer, userbuf, size)) return -EFAULT;
 
   //parsing:
-  kbuf[count] = '\0';
+  buffer[size] = '\0';
   while (dev_no < kf_MAX_DEVS)
   {
     char *match = strsep(&tmp, " \n\r\t");
@@ -634,7 +639,8 @@ static int kf_proc_write(struct file *file, const char __user *buffer, unsigned 
   }
 
   //kthxbai:
-  return count;
+  *ppos = size;
+  return size;
 }
 
 /*  ────────────────────────── Init ─────────────────────────  */
@@ -648,14 +654,10 @@ static int __init kfortune_init(void)
     kf_dev_init(kf_devs+i);
 
   //Register procfs file
-  if (unlikely(!(kf_procfile = create_proc_entry(kf_PROCFS_NAME, 0644, NULL))))
+  if (unlikely(!(kf_procfile = proc_create(kf_PROCFS_NAME, 0644, NULL, &kf_procfile_fops))))
   {
     printk(KERN_ERR "kfortune: Error: Unable to register procfs file '"kf_PROCFS_NAME"'\n");
     return -ENOMEM;
-  } else
-  {
-    kf_procfile->read_proc = kf_proc_read;
-    kf_procfile->write_proc = kf_proc_write;
   }
 
   //It's ready
@@ -675,7 +677,7 @@ static void __exit kfortune_exit(void)
   }
 
   //deregister procfs file
-  remove_proc_entry(kf_PROCFS_NAME, NULL);  //returns void, no checking, let's just hope it went ok...
+  proc_remove(kf_procfile);
 
   //kthxbai
   printk(KERN_INFO "kfortune: unloaded\n");
