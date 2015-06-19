@@ -40,11 +40,11 @@ fortune(6)
 
 ## BUGS
 
-Report bugs to [https://github.com/kralyk/kfortune/issues](https://github.com/kralyk/kfortune/issues)
+Report bugs to [https://github.com/vojtechkral/kfortune/issues](https://github.com/vojtechkral/kfortune/issues)
 
 ## COPYRIGHT
 
-Copyright (c) 2011 Vojtech 'kralyk' Kral
+Copyright (c) 2011 Vojtech Kral
 
 Distributed under the terms of the GNU General Public License version 3 or later.
 

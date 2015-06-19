@@ -1,4 +1,5 @@
 #!/bin/bash
 
+ronn README.ronn
+gzip -c9 'README.6' > 'kfortune.6.gz'
 cat README.ronn | sed '1s/.*/kfortune/;  s/##/###/g; ' > README.md
-
