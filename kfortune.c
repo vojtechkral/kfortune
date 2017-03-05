@@ -515,17 +515,9 @@ static void kf_enable_dev(kf_dev *dev, int enable)
 		}
 	} else
 	{
-		//deregister
-		if (errno = misc_deregister(&dev->dev))
-		{
-			printk(KERN_ERR "kfortune: Error: Unable to deregister device '/dev/%s' (errno = %d)\n", dev->filename, errno);
-			return;
-		}
-		else
-		{
-			kf_dev_clear(dev);
-			kf_dev_init(dev);
-		}
+		misc_deregister(&dev->dev);
+		kf_dev_clear(dev);
+		kf_dev_init(dev);
 	}
 }
 
